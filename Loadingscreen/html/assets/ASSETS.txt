@@ -1,0 +1,18 @@
+Loadingscreen – Assets-Ordner
+=============================
+
+Lege hier deine Hintergrund-Dateien ab. Pfade in config.js sind bereits eingetragen.
+
+Dateien (Standard):
+  background.mp4   – Video-Hintergrund (Video-Modus)
+  slide-1.png      – Slideshow Bild 1 (Bilder-Modus)
+  slide-2.png      – Slideshow Bild 2
+  slide-3.png      – Slideshow Bild 3
+  music.mp3        – Optional, nur fuer Bilder-Modus (backgroundAudio in config.js)
+
+Empfohlene Groessen:
+  Video:  MP4 (H.264), z. B. 1920x1080, Loop-faehig
+  Bilder: PNG oder JPG, gleiches Seitenverhaeltnis (16:9)
+
+Die mitgelieferten Dateien sind Platzhalter – einfach durch eigene Dateien
+ersetzen (gleicher Dateiname) und Resource neu starten: ensure Loadingscreen
