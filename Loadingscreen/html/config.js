@@ -61,18 +61,19 @@ window.LOADING_CONFIG = {
     previewPercent: 68,
 
     // Spielerprofil oben rechts (Discord-Avatar, Name, Online-Status).
-    // In server.cfg optional:
-    //   setr loadingscreen:use_lanyard true
-    //   setr loadingscreen:discord_bot_token ""
-    // Lanyard liefert echten Discord-Status; alternativ Bot-Token nur für Avatar/Name.
+    // In server.cfg:
+    //   setr loadingscreen:discord_bot_token "DEIN_BOT_TOKEN"   ← Avatar + Anzeigename + @username
+    //   setr loadingscreen:use_lanyard true                      ← echter Online-Status (Spieler braucht Lanyard)
+    // Discord-Docs: https://discord.com/developers/docs/resources/user
     showPlayerProfile: true,
 
     // Nur für Browser-Vorschau – FiveM ersetzt das per playerProfile Event.
     profilePreview: {
-        name: 'Max Mustermann',
-        discordUsername: 'max_rp',
+        displayName: 'EGGSY',
+        name: 'EGGSY',
+        discordUsername: 'eggsydev',
         discordStatus: 'online',
         statusLabel: 'Online',
-        avatar: 'https://cdn.discordapp.com/embed/avatars/0.png'
+        avatar: 'https://cdn.discordapp.com/avatars/162969778699501569/a_5a915f09f9a2bdf1c05e65d75ffd7101.gif?size=128'
     }
 };

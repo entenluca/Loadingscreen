@@ -1,4 +1,3 @@
-local RESOURCE = GetCurrentResourceName()
 local avatarCache = {}
 
 local STATUS_LABELS = {
@@ -7,7 +6,7 @@ local STATUS_LABELS = {
     dnd = 'Bitte nicht stören',
     offline = 'Offline',
     connecting = 'Verbindet...',
-    loading = 'Lädt...'
+    loading = 'Status unbekannt'
 }
 
 local function getConvarBool(name, default)
@@ -24,21 +23,58 @@ local function getDiscordId(source)
     return identifier:gsub('discord:', '')
 end
 
-local function defaultAvatar(discordId)
+--- Discord CDN: Default-Avatar
+--- @see https://discord.com/developers/docs/reference#image-formatting
+local function defaultAvatar(discordId, discriminator)
+    local disc = tonumber(discriminator)
+
+    -- Legacy-Usernames: discriminator % 5
+    if disc and disc > 0 then
+        return ('https://cdn.discordapp.com/embed/avatars/%d.png'):format(disc % 5)
+    end
+
+    -- Neues Username-System: (user_id >> 22) % 6
     local numericId = tonumber(discordId)
-    if not numericId then
+    if numericId then
+        return ('https://cdn.discordapp.com/embed/avatars/%d.png'):format((numericId >> 22) % 6)
+    end
+
+    return nil
+end
+
+--- Discord CDN: Custom-Avatar (a_-Hash = animiert → .gif)
+--- @see https://discord.com/developers/docs/reference#image-formatting
+local function buildAvatarUrl(discordId, avatarHash, discriminator)
+    if avatarHash and avatarHash ~= '' then
+        local extension = avatarHash:sub(1, 2) == 'a_' and 'gif' or 'png'
+        return ('https://cdn.discordapp.com/avatars/%s/%s.%s?size=128'):format(discordId, avatarHash, extension)
+    end
+
+    return defaultAvatar(discordId, discriminator)
+end
+
+--- Discord User Object → einheitliches Profil
+--- global_name = Anzeigename, username = @-Handle
+--- @see https://discord.com/developers/docs/resources/user#user-object
+local function parseDiscordUser(user, discordId)
+    if type(user) ~= 'table' then
         return nil
     end
 
-    return ('https://cdn.discordapp.com/embed/avatars/%d.png'):format((numericId >> 22) % 6)
-end
-
-local function buildAvatarUrl(discordId, avatarHash)
-    if avatarHash and avatarHash ~= '' then
-        return ('https://cdn.discordapp.com/avatars/%s/%s.png?size=128'):format(discordId, avatarHash)
+    local username = user.username
+    if type(username) ~= 'string' or username == '' then
+        return nil
     end
 
-    return defaultAvatar(discordId)
+    local globalName = user.global_name or user.display_name
+    local displayName = (type(globalName) == 'string' and globalName ~= '') and globalName or username
+
+    return {
+        avatar = buildAvatarUrl(discordId, user.avatar, user.discriminator),
+        displayName = displayName,
+        username = username,
+        discriminator = user.discriminator
+    }
 end
 
 local function awaitHttp(method, url, headers, body)
@@ -74,13 +110,14 @@ local function fetchLanyardProfile(discordId)
     end
 
     local data = decoded.data
-    local user = data.discord_user or {}
+    local userData = parseDiscordUser(data.discord_user, discordId)
 
-    return {
-        avatar = buildAvatarUrl(discordId, user.avatar),
-        discordUsername = user.global_name or user.username or nil,
-        discordStatus = data.discord_status or 'offline'
-    }
+    if not userData then
+        return nil
+    end
+
+    userData.discordStatus = data.discord_status or 'offline'
+    return userData
 end
 
 local function fetchDiscordProfile(discordId)
@@ -104,22 +141,18 @@ local function fetchDiscordProfile(discordId)
     end
 
     local user = json.decode(response.body)
-    if type(user) ~= 'table' then
+    local userData = parseDiscordUser(user, discordId)
+
+    if not userData then
         return nil
     end
 
-    local profile = {
-        avatar = buildAvatarUrl(discordId, user.avatar),
-        discordUsername = user.global_name or user.username or nil,
-        discordStatus = 'online'
-    }
-
     avatarCache[discordId] = {
-        profile = profile,
+        profile = userData,
         expiresAt = os.time() + 300
     }
 
-    return profile
+    return userData
 end
 
 local function resolveStatusLabel(status)
@@ -131,12 +164,13 @@ local function buildPlayerProfile(source)
     local discordId = getDiscordId(source)
     local profile = {
         name = playerName,
+        displayName = playerName,
+        discordUsername = nil,
         discordId = discordId,
-        discordUsername = playerName,
         discordStatus = 'connecting',
         statusLabel = resolveStatusLabel('connecting'),
         avatar = nil,
-        isOnline = true
+        isOnline = false
     }
 
     if not discordId then
@@ -145,25 +179,38 @@ local function buildPlayerProfile(source)
         return profile
     end
 
-    local remoteProfile
+    local userData = fetchDiscordProfile(discordId)
+    local discordStatus = nil
 
     if getConvarBool('loadingscreen:use_lanyard', true) then
-        remoteProfile = fetchLanyardProfile(discordId)
+        local lanyardData = fetchLanyardProfile(discordId)
+
+        if lanyardData then
+            discordStatus = lanyardData.discordStatus
+
+            if not userData then
+                userData = lanyardData
+            end
+        end
     end
 
-    if not remoteProfile then
-        remoteProfile = fetchDiscordProfile(discordId)
-    end
+    if userData then
+        profile.displayName = userData.displayName
+        profile.name = userData.displayName
+        profile.discordUsername = userData.username
+        profile.avatar = userData.avatar
 
-    if remoteProfile then
-        profile.avatar = remoteProfile.avatar
-        profile.discordUsername = remoteProfile.discordUsername or playerName
-        profile.discordStatus = remoteProfile.discordStatus or 'online'
+        if discordStatus then
+            profile.discordStatus = discordStatus
+            profile.isOnline = discordStatus ~= 'offline'
+        else
+            profile.discordStatus = 'loading'
+            profile.isOnline = false
+        end
+
         profile.statusLabel = resolveStatusLabel(profile.discordStatus)
-        profile.isOnline = profile.discordStatus ~= 'offline'
     else
-        profile.avatar = defaultAvatar(discordId)
-        profile.discordUsername = playerName
+        profile.avatar = defaultAvatar(discordId, nil)
         profile.discordStatus = 'connecting'
         profile.statusLabel = resolveStatusLabel('connecting')
     end

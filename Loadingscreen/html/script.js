@@ -280,15 +280,15 @@
             return;
         }
 
-        const name = profile.name || profile.discordUsername || 'Spieler';
-        const username = profile.discordUsername || '';
+        const displayName = profile.displayName || profile.name || 'Spieler';
+        const username = profile.discordUsername || profile.username || '';
         const status = profile.discordStatus || 'connecting';
         const statusLabel = profile.statusLabel || 'Verbindet...';
 
-        setText(profileName, name);
+        setText(profileName, displayName);
 
         if (profileUsername) {
-            if (username && username !== name) {
+            if (username) {
                 const handle = username.startsWith('@') ? username : `@${username}`;
                 setText(profileUsername, handle);
                 profileUsername.hidden = false;
@@ -300,7 +300,7 @@
         if (profileAvatar) {
             if (typeof profile.avatar === 'string' && profile.avatar.trim() !== '') {
                 profileAvatar.src = profile.avatar;
-                profileAvatar.alt = `${name} – Discord Avatar`;
+                profileAvatar.alt = `${displayName} – Discord Avatar`;
             } else {
                 profileAvatar.removeAttribute('src');
                 profileAvatar.alt = '';
