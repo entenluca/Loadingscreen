@@ -1,5 +1,3 @@
-local RESOURCE = GetCurrentResourceName()
-
 local function pushProfileToLoadscreen(profile)
     if type(profile) ~= 'table' then
         return
@@ -17,6 +15,12 @@ end
 
 RegisterNetEvent('loadingscreen:client:receiveProfile', function(profile)
     pushProfileToLoadscreen(profile)
+end)
+
+-- Avatar kommt erst nach dem Connect (nicht blockierend im playerConnecting)
+CreateThread(function()
+    Wait(1500)
+    requestProfile()
 end)
 
 exports('RefreshPlayerProfile', requestProfile)

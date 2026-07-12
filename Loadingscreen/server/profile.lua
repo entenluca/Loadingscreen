@@ -46,7 +46,15 @@ local function debugLog(message)
     end
 end
 
+local function isValidSource(source)
+    return type(source) == 'number' and source > 0
+end
+
 local function getDiscordId(source)
+    if not isValidSource(source) then
+        return nil
+    end
+
     local identifier = GetPlayerIdentifierByType(source, 'discord')
     if identifier then
         return identifier:gsub('discord:', '')
@@ -149,8 +157,11 @@ local function fetchAvatarDataUri(avatarUrl)
     return dataUri
 end
 
-local function embedAvatar(profile)
-    if type(profile) ~= 'table' then
+local function embedAvatar(profile, skipAvatar)
+    if type(profile) ~= 'table' or skipAvatar then
+        if type(profile) == 'table' then
+            profile.avatarUrl = nil
+        end
         return profile
     end
 
@@ -227,25 +238,31 @@ local function resolveStatusLabel(status)
     return STATUS_LABELS[status] or STATUS_LABELS.online
 end
 
-function BuildPlayerProfile(source)
-    local playerName = GetPlayerName(source) or 'Spieler'
-    local discordId = getDiscordId(source)
-    local profile = {
+local function buildFallbackProfile(playerName, discordId)
+    return {
         name = playerName,
         displayName = playerName,
         discordUsername = nil,
         discordId = discordId,
-        discordStatus = 'connecting',
-        statusLabel = resolveStatusLabel('connecting'),
+        discordStatus = discordId and 'loading' or 'connecting',
+        statusLabel = resolveStatusLabel(discordId and 'loading' or 'connecting'),
         avatar = nil,
         isOnline = false
     }
+end
+
+--- Baut Profil nur aus bereits gelesenen Werten – keine Player-Natives mehr danach.
+function BuildPlayerProfileFromData(discordId, playerName, options)
+    options = options or {}
+    local skipAvatar = options.skipAvatar == true
+
+    playerName = playerName or 'Spieler'
+
+    local profile = buildFallbackProfile(playerName, discordId)
 
     if not discordId then
-        debugLog(('Keine Discord-ID fuer Spieler %s (%s)'):format(playerName, source))
-        profile.statusLabel = resolveStatusLabel('loading')
-        profile.discordStatus = 'loading'
-        return profile
+        debugLog(('Keine Discord-ID fuer Spieler %s'):format(playerName))
+        return embedAvatar(profile, skipAvatar)
     end
 
     local userData = fetchDiscordProfile(discordId)
@@ -284,17 +301,43 @@ function BuildPlayerProfile(source)
         profile.statusLabel = resolveStatusLabel('connecting')
     end
 
-    return embedAvatar(profile)
+    return embedAvatar(profile, skipAvatar)
 end
 
-AddEventHandler('playerConnecting', function(_, _, deferrals)
+function BuildPlayerProfile(source)
+    if not isValidSource(source) then
+        return buildFallbackProfile('Spieler', nil)
+    end
+
+    local playerName = GetPlayerName(source) or 'Spieler'
+    local discordId = getDiscordId(source)
+
+    return BuildPlayerProfileFromData(discordId, playerName, { skipAvatar = false })
+end
+
+AddEventHandler('playerConnecting', function(playerName, _, deferrals)
     deferrals.defer()
     Wait(0)
 
+    -- Sofort auslesen – source wird waehrend HTTP-Anfragen ungueltig!
     local src = source
-    deferrals.update('Profil wird geladen...')
+    local capturedName = playerName or 'Spieler'
+    local capturedDiscordId = getDiscordId(src)
 
-    local profile = BuildPlayerProfile(src)
+    deferrals.update('Verbindung wird hergestellt...')
+
+    local profile = buildFallbackProfile(capturedName, capturedDiscordId)
+
+    local ok, result = pcall(function()
+        -- Beim Connect kein Avatar-Download: schneller + stabiler
+        return BuildPlayerProfileFromData(capturedDiscordId, capturedName, { skipAvatar = true })
+    end)
+
+    if ok and type(result) == 'table' then
+        profile = result
+    else
+        debugLog(('Connect-Profil Fehler: %s'):format(tostring(result)))
+    end
 
     deferrals.handover({
         playerProfile = profile
@@ -305,6 +348,10 @@ end)
 
 RegisterNetEvent('loadingscreen:server:requestProfile', function()
     local src = source
+    if not isValidSource(src) then
+        return
+    end
+
     local profile = BuildPlayerProfile(src)
     TriggerClientEvent('loadingscreen:client:receiveProfile', src, profile)
 end)
