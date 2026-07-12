@@ -5,6 +5,7 @@
     const titleWhite = byId('titleWhite');
     const titleYellow = byId('titleYellow');
     const subtitle = byId('subtitle');
+    const brandLabel = byId('brandLabel');
     const infoIcon = byId('infoIcon');
     const infoTitle = byId('infoTitle');
     const infoText = byId('infoText');
@@ -16,10 +17,18 @@
     const soundIcon = byId('soundIcon');
     const soundText = byId('soundText');
     const progressFill = byId('progressFill');
+    const progressPercent = byId('progressPercent');
+    const loadingStatus = byId('loadingStatus');
+    const progressTrack = document.querySelector('.progress-track');
 
-    // Icons kommen jetzt aus der ausgelagerten, lokal gebuendelten Icon-Bibliothek
-    // (icons.js, muss in index.html VOR script.js eingebunden sein).
     const ICONS = window.ICON_LIBRARY || {};
+
+    const LOADING_PHASES = [
+        { until: 25, text: 'Verbindung wird hergestellt' },
+        { until: 55, text: 'Ressourcen werden geladen' },
+        { until: 85, text: 'Welt wird vorbereitet' },
+        { until: 100, text: 'Fast geschafft' }
+    ];
 
     const state = {
         progress: Number.isFinite(cfg.previewPercent) ? cfg.previewPercent : 68,
@@ -47,9 +56,27 @@
         if (el) el.style.display = 'none';
     }
 
+    function resolveLoadingStatus(percent) {
+        const customPhases = Array.isArray(cfg.loadingPhases) ? cfg.loadingPhases : null;
+
+        if (customPhases) {
+            for (const phase of customPhases) {
+                if (percent <= phase.until) return phase.text;
+            }
+            return customPhases[customPhases.length - 1]?.text || 'Wird geladen';
+        }
+
+        for (const phase of LOADING_PHASES) {
+            if (percent <= phase.until) return phase.text;
+        }
+
+        return 'Fast geschafft';
+    }
+
     setText(titleWhite, cfg.serverTitleWhite || 'OSNABRÜCK');
     setText(titleYellow, cfg.serverTitleYellow || 'ROLEPLAY');
     setText(subtitle, cfg.subtitle || 'Willkommen in deiner neuen Heimat.');
+    setText(brandLabel, cfg.brandLabel || 'Roleplay Server');
     setIcon(infoIcon, cfg.infoIcon || cfg.infoEmoji, 'video');
     setText(infoTitle, cfg.infoTitle || 'Wichtige Information');
     setText(infoText, cfg.infoText || 'Um im Supportfall schnelle und korrekte Entscheidungen treffen zu können, empfehlen wir euch, passende Videobeweise (Clips) für mögliche Supportgespräche bereitzuhalten.');
@@ -116,7 +143,6 @@
         });
 
         tryPlay(bgVideo, () => {
-            // Falls Autoplay mit Ton blockiert wird, läuft das Video stumm weiter.
             state.muted = true;
             updateSoundUI();
             bgVideo.muted = true;
@@ -195,10 +221,13 @@
     function setProgress(percent) {
         const safePercent = Math.max(0, Math.min(100, Math.round(percent)));
         state.progress = safePercent;
+
         if (progressFill) progressFill.style.width = `${safePercent}%`;
+        if (progressPercent) progressPercent.textContent = `${safePercent}%`;
+        if (loadingStatus) loadingStatus.textContent = resolveLoadingStatus(safePercent);
+        if (progressTrack) progressTrack.setAttribute('aria-valuenow', String(safePercent));
     }
 
-    // FiveM sendet während des Ladens Message Events an den LoadingScreen.
     window.addEventListener('message', (event) => {
         const data = event.data || {};
 
@@ -208,7 +237,6 @@
         }
     });
 
-    // Browser-Vorschau / Fallback, falls keine FiveM-Progress-Events ankommen.
     setProgress(state.progress);
     const fakeProgress = window.setInterval(() => {
         if (state.gotFiveMProgress) {
@@ -222,7 +250,6 @@
         }
     }, 900);
 
-    // Leertaste funktioniert als Umschalter: Ton an <-> stumm.
     document.addEventListener('keydown', (event) => {
         if (event.code === 'Space') {
             event.preventDefault();
