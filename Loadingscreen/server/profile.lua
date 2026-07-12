@@ -1,4 +1,5 @@
 local avatarCache = {}
+local avatarDataCache = {}
 
 local STATUS_LABELS = {
     online = 'Online',
@@ -9,31 +10,64 @@ local STATUS_LABELS = {
     loading = 'Status unbekannt'
 }
 
+local B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+
+local function base64Encode(data)
+    return ((data:gsub('.', function(x)
+        local r, byte = '', x:byte()
+        for i = 8, 1, -1 do
+            r = r .. (byte % 2 ^ i - byte % 2 ^ (i - 1) > 0 and '1' or '0')
+        end
+        return r
+    end) .. '0000'):gsub('%d%d%d?%d?%d?%d?', function(x)
+        if #x < 6 then
+            return ''
+        end
+        local value = 0
+        for i = 1, 6 do
+            value = value + (x:sub(i, i) == '1' and 2 ^ (6 - i) or 0)
+        end
+        return B64:sub(value + 1, value + 1)
+    end) .. ({ '', '==', '=' })[#data % 3 + 1])
+end
+
 local function getConvarBool(name, default)
     local value = GetConvar(name, default and 'true' or 'false')
     return value == '1' or value == 'true' or value == 'yes'
 end
 
-local function getDiscordId(source)
-    local identifier = GetPlayerIdentifierByType(source, 'discord')
-    if not identifier then
-        return nil
-    end
-
-    return identifier:gsub('discord:', '')
+local function isDebugEnabled()
+    return getConvarBool('loadingscreen:debug', false)
 end
 
---- Discord CDN: Default-Avatar
---- @see https://discord.com/developers/docs/reference#image-formatting
+local function debugLog(message)
+    if isDebugEnabled() then
+        print(('[Loadingscreen] %s'):format(message))
+    end
+end
+
+local function getDiscordId(source)
+    local identifier = GetPlayerIdentifierByType(source, 'discord')
+    if identifier then
+        return identifier:gsub('discord:', '')
+    end
+
+    for _, id in ipairs(GetPlayerIdentifiers(source)) do
+        if id:find('^discord:') then
+            return id:gsub('discord:', '')
+        end
+    end
+
+    return nil
+end
+
 local function defaultAvatar(discordId, discriminator)
     local disc = tonumber(discriminator)
 
-    -- Legacy-Usernames: discriminator % 5
     if disc and disc > 0 then
         return ('https://cdn.discordapp.com/embed/avatars/%d.png'):format(disc % 5)
     end
 
-    -- Neues Username-System: (user_id >> 22) % 6
     local numericId = tonumber(discordId)
     if numericId then
         return ('https://cdn.discordapp.com/embed/avatars/%d.png'):format((numericId >> 22) % 6)
@@ -42,8 +76,6 @@ local function defaultAvatar(discordId, discriminator)
     return nil
 end
 
---- Discord CDN: Custom-Avatar (a_-Hash = animiert → .gif)
---- @see https://discord.com/developers/docs/reference#image-formatting
 local function buildAvatarUrl(discordId, avatarHash, discriminator)
     if avatarHash and avatarHash ~= '' then
         local extension = avatarHash:sub(1, 2) == 'a_' and 'gif' or 'png'
@@ -53,9 +85,6 @@ local function buildAvatarUrl(discordId, avatarHash, discriminator)
     return defaultAvatar(discordId, discriminator)
 end
 
---- Discord User Object → einheitliches Profil
---- global_name = Anzeigename, username = @-Handle
---- @see https://discord.com/developers/docs/resources/user#user-object
 local function parseDiscordUser(user, discordId)
     if type(user) ~= 'table' then
         return nil
@@ -70,7 +99,7 @@ local function parseDiscordUser(user, discordId)
     local displayName = (type(globalName) == 'string' and globalName ~= '') and globalName or username
 
     return {
-        avatar = buildAvatarUrl(discordId, user.avatar, user.discriminator),
+        avatarUrl = buildAvatarUrl(discordId, user.avatar, user.discriminator),
         displayName = displayName,
         username = username,
         discriminator = user.discriminator
@@ -95,6 +124,43 @@ local function awaitHttp(method, url, headers, body)
     end
 
     return result
+end
+
+local function fetchAvatarDataUri(avatarUrl)
+    if type(avatarUrl) ~= 'string' or avatarUrl == '' then
+        return nil
+    end
+
+    local cached = avatarDataCache[avatarUrl]
+    if cached then
+        return cached
+    end
+
+    local response = awaitHttp('GET', avatarUrl)
+    if response.status ~= 200 or response.body == '' then
+        debugLog(('Avatar-Download fehlgeschlagen (%s): HTTP %s'):format(avatarUrl, response.status))
+        return nil
+    end
+
+    local mime = avatarUrl:find('%.gif', 1, true) and 'image/gif' or 'image/png'
+    local dataUri = ('data:%s;base64,%s'):format(mime, base64Encode(response.body))
+
+    avatarDataCache[avatarUrl] = dataUri
+    return dataUri
+end
+
+local function embedAvatar(profile)
+    if type(profile) ~= 'table' then
+        return profile
+    end
+
+    local avatarUrl = profile.avatarUrl or profile.avatar
+    if type(avatarUrl) == 'string' and avatarUrl ~= '' and not avatarUrl:find('^data:') then
+        profile.avatar = fetchAvatarDataUri(avatarUrl) or nil
+    end
+
+    profile.avatarUrl = nil
+    return profile
 end
 
 local function fetchLanyardProfile(discordId)
@@ -123,6 +189,7 @@ end
 local function fetchDiscordProfile(discordId)
     local token = GetConvar('loadingscreen:discord_bot_token', '')
     if token == '' then
+        debugLog('Kein Bot-Token gesetzt (set loadingscreen:discord_bot_token "...")')
         return nil
     end
 
@@ -137,6 +204,7 @@ local function fetchDiscordProfile(discordId)
     })
 
     if response.status ~= 200 or response.body == '' then
+        debugLog(('Discord API Fehler fuer %s: HTTP %s'):format(discordId, response.status))
         return nil
     end
 
@@ -159,7 +227,7 @@ local function resolveStatusLabel(status)
     return STATUS_LABELS[status] or STATUS_LABELS.online
 end
 
-local function buildPlayerProfile(source)
+function BuildPlayerProfile(source)
     local playerName = GetPlayerName(source) or 'Spieler'
     local discordId = getDiscordId(source)
     local profile = {
@@ -174,6 +242,7 @@ local function buildPlayerProfile(source)
     }
 
     if not discordId then
+        debugLog(('Keine Discord-ID fuer Spieler %s (%s)'):format(playerName, source))
         profile.statusLabel = resolveStatusLabel('loading')
         profile.discordStatus = 'loading'
         return profile
@@ -198,7 +267,7 @@ local function buildPlayerProfile(source)
         profile.displayName = userData.displayName
         profile.name = userData.displayName
         profile.discordUsername = userData.username
-        profile.avatar = userData.avatar
+        profile.avatarUrl = userData.avatarUrl
 
         if discordStatus then
             profile.discordStatus = discordStatus
@@ -210,20 +279,34 @@ local function buildPlayerProfile(source)
 
         profile.statusLabel = resolveStatusLabel(profile.discordStatus)
     else
-        profile.avatar = defaultAvatar(discordId, nil)
+        profile.avatarUrl = defaultAvatar(discordId, nil)
         profile.discordStatus = 'connecting'
         profile.statusLabel = resolveStatusLabel('connecting')
     end
 
-    return profile
+    return embedAvatar(profile)
 end
+
+AddEventHandler('playerConnecting', function(_, _, deferrals)
+    deferrals.defer()
+    Wait(0)
+
+    local src = source
+    deferrals.update('Profil wird geladen...')
+
+    local profile = BuildPlayerProfile(src)
+
+    deferrals.handover({
+        playerProfile = profile
+    })
+
+    deferrals.done()
+end)
 
 RegisterNetEvent('loadingscreen:server:requestProfile', function()
     local src = source
-    local profile = buildPlayerProfile(src)
+    local profile = BuildPlayerProfile(src)
     TriggerClientEvent('loadingscreen:client:receiveProfile', src, profile)
 end)
 
-exports('GetPlayerProfile', function(source)
-    return buildPlayerProfile(source)
-end)
+exports('GetPlayerProfile', BuildPlayerProfile)

@@ -284,6 +284,7 @@
         const username = profile.discordUsername || profile.username || '';
         const status = profile.discordStatus || 'connecting';
         const statusLabel = profile.statusLabel || 'Verbindet...';
+        const avatarSrc = profile.avatar || profile.avatarUrl || '';
 
         setText(profileName, displayName);
 
@@ -298,12 +299,18 @@
         }
 
         if (profileAvatar) {
-            if (typeof profile.avatar === 'string' && profile.avatar.trim() !== '') {
-                profileAvatar.src = profile.avatar;
-                profileAvatar.alt = `${displayName} – Discord Avatar`;
+            profileAvatar.alt = '';
+            profileAvatar.classList.remove('is-fallback');
+
+            if (typeof avatarSrc === 'string' && avatarSrc.trim() !== '') {
+                profileAvatar.onerror = () => {
+                    profileAvatar.removeAttribute('src');
+                    profileAvatar.classList.add('is-fallback');
+                };
+                profileAvatar.src = avatarSrc;
             } else {
                 profileAvatar.removeAttribute('src');
-                profileAvatar.alt = '';
+                profileAvatar.classList.add('is-fallback');
             }
         }
 
@@ -312,6 +319,14 @@
 
         playerProfile.hidden = false;
         showElement(playerProfile, 'block');
+    }
+
+    function readHandoverProfile() {
+        const handover = window.nuiHandoverData;
+        if (handover && handover.playerProfile && typeof handover.playerProfile === 'object') {
+            return handover.playerProfile;
+        }
+        return null;
     }
 
     window.addEventListener('message', (event) => {
@@ -351,7 +366,10 @@
     updateSoundUI();
     setupBackground();
 
-    if (cfg.showPlayerProfile !== false && cfg.profilePreview) {
+    const handoverProfile = readHandoverProfile();
+    if (handoverProfile) {
+        renderPlayerProfile(handoverProfile);
+    } else if (cfg.showPlayerProfile !== false && cfg.profilePreview) {
         renderPlayerProfile(cfg.profilePreview);
     }
 })();

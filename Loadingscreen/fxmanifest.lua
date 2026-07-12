@@ -3,7 +3,7 @@ game 'gta5'
 
 author 'ChatGPT'
 description 'MB Development FiveM LoadingScreen mit Video-/PNG-Slideshow-Modus, Icons, Space-Toggle, Spielerprofil und voller Progressbar'
-version '1.2.0'
+version '1.2.1'
 
 loadscreen 'html/index.html'
 loadscreen_cursor 'yes'

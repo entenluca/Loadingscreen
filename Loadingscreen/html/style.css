@@ -189,15 +189,24 @@ body {
     flex: 0 0 56px;
     width: 56px;
     height: 56px;
+    overflow: hidden;
+    border-radius: 50%;
 }
 
 .player-avatar {
+    display: block;
     width: 56px;
     height: 56px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid rgba(255, 255, 255, 0.12);
     background: linear-gradient(135deg, rgba(245, 255, 0, 0.25), rgba(255, 255, 255, 0.08));
+    font-size: 0;
+    color: transparent;
+}
+
+.player-avatar.is-fallback {
+    background: linear-gradient(135deg, rgba(245, 255, 0, 0.35), rgba(255, 255, 255, 0.12));
 }
 
 .player-status-dot {
