@@ -18,11 +18,13 @@ RegisterNetEvent('loadingscreen:client:receiveProfile', function(profile)
 end)
 
 CreateThread(function()
-    Wait(300)
+    while not NetworkIsSessionStarted() do
+        Wait(100)
+    end
 
-    for _ = 1, 25 do
+    for _ = 1, 30 do
         requestProfile()
-        Wait(800)
+        Wait(500)
     end
 end)
 

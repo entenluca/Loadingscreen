@@ -87,31 +87,19 @@ local function getDiscordId(source)
     return nil
 end
 
-local function captureDiscordId(source, playerName)
-    if not isValidSource(source) then
-        return nil
+local function logMissingDiscord(source, playerName)
+    if not isDebugEnabled() then
+        return
     end
 
-    for _ = 1, 40 do
-        local discordId = getDiscordId(source)
-        if discordId then
-            return discordId
-        end
-        Wait(50)
+    local identifiers = table.concat(getAllIdentifiers(source), ', ')
+    if identifiers == '' then
+        identifiers = '(keine Identifier empfangen)'
     end
 
-    if isDebugEnabled() then
-        local identifiers = table.concat(getAllIdentifiers(source), ', ')
-        if identifiers == '' then
-            identifiers = '(keine Identifier empfangen)'
-        end
-
-        print(('[Loadingscreen] Keine Discord-ID fuer Spieler %s'):format(playerName or 'Unbekannt'))
-        print(('[Loadingscreen] Empfangene Identifier: %s'):format(identifiers))
-        print('[Loadingscreen] Discord muss in FiveM verknuepft sein: Einstellungen -> Kontoverknuepfungen -> Discord')
-    end
-
-    return nil
+    print(('[Loadingscreen] Keine Discord-ID fuer Spieler %s'):format(playerName or 'Unbekannt'))
+    print(('[Loadingscreen] Empfangene Identifier: %s'):format(identifiers))
+    print('[Loadingscreen] Discord in FiveM verknuepfen: Einstellungen -> Kontoverknuepfungen -> Discord')
 end
 
 local function defaultAvatar(discordId, discriminator)
@@ -302,7 +290,6 @@ local function buildFallbackProfile(playerName, discordId)
     }
 end
 
---- Baut Profil nur aus bereits gelesenen Werten – keine Player-Natives mehr danach.
 function BuildPlayerProfileFromData(discordId, playerName, options)
     options = options or {}
     local skipAvatar = options.skipAvatar == true
@@ -312,7 +299,6 @@ function BuildPlayerProfileFromData(discordId, playerName, options)
     local profile = buildFallbackProfile(playerName, discordId)
 
     if not discordId then
-        debugLog(('Keine Discord-ID fuer Spieler %s'):format(playerName))
         return embedAvatar(profile, skipAvatar)
     end
 
@@ -363,59 +349,63 @@ function BuildPlayerProfile(source)
     local playerName = GetPlayerName(source) or 'Spieler'
     local discordId = getDiscordId(source)
 
+    if not discordId then
+        logMissingDiscord(source, playerName)
+    end
+
     return BuildPlayerProfileFromData(discordId, playerName, { skipAvatar = false })
 end
 
-AddEventHandler('playerConnecting', function(playerName, _, deferrals)
-    deferrals.defer()
-    Wait(0)
-
-    local src = source
-    local capturedName = playerName or 'Spieler'
-    local capturedDiscordId = nil
-
-    if isValidSource(src) then
-        for _ = 1, 10 do
-            capturedDiscordId = getDiscordId(src)
-            if capturedDiscordId then
-                break
-            end
-            Wait(0)
-        end
-    end
-
-    deferrals.update('Verbindung wird hergestellt...')
-
-    local profile = buildFallbackProfile(capturedName, capturedDiscordId)
-
-    local ok, result = pcall(function()
-        return BuildPlayerProfileFromData(capturedDiscordId, capturedName, {
-            skipAvatar = false,
-            avatarSize = 64
-        })
-    end)
-
-    if ok and type(result) == 'table' then
-        profile = result
-    else
-        debugLog(('Connect-Profil Fehler: %s'):format(tostring(result)))
-    end
-
-    deferrals.handover({
-        playerProfile = profile
-    })
-
-    deferrals.done()
-end)
-
-RegisterNetEvent('loadingscreen:server:requestProfile', function()
-    local src = source
-    if not isValidSource(src) then
+local function sendProfileToClient(source)
+    if not isValidSource(source) then
         return
     end
 
-    local profile = BuildPlayerProfile(src)
-    TriggerClientEvent('loadingscreen:client:receiveProfile', src, profile)
+    local profile = BuildPlayerProfile(source)
+    TriggerClientEvent('loadingscreen:client:receiveProfile', source, profile)
+end
+
+-- Identifier sind bei playerJoining zuverlaessig (txAdmin/Queue blockieren playerConnecting oft)
+AddEventHandler('playerJoining', function()
+    local src = source
+
+    CreateThread(function()
+        local discordId = nil
+
+        for _ = 1, 15 do
+            discordId = getDiscordId(src)
+            if discordId then
+                break
+            end
+            Wait(200)
+        end
+
+        sendProfileToClient(src)
+    end)
 end)
+
+RegisterNetEvent('loadingscreen:server:requestProfile', function()
+    sendProfileToClient(source)
+end)
+
+RegisterCommand('lsdebug', function(source)
+    if source == 0 then
+        print('[Loadingscreen] lsdebug: Nur ingame als Spieler nutzbar.')
+        return
+    end
+
+    local playerName = GetPlayerName(source) or 'Spieler'
+    local discordId = getDiscordId(source) or 'KEINE'
+    local identifiers = table.concat(getAllIdentifiers(source), ', ')
+
+    print(('[Loadingscreen] lsdebug %s (%s) Discord: %s'):format(playerName, source, discordId))
+    print(('[Loadingscreen] Identifier: %s'):format(identifiers))
+
+    TriggerClientEvent('chat:addMessage', source, {
+        color = { 245, 255, 0 },
+        multiline = true,
+        args = { 'Loadingscreen', ('Discord-ID: %s'):format(discordId) }
+    })
+end, false)
 
 exports('GetPlayerProfile', BuildPlayerProfile)
