@@ -58,5 +58,21 @@ window.LOADING_CONFIG = {
     startMuted: false,
 
     // Nur für Browser-Vorschau. FiveM überschreibt den Wert per loadProgress Event.
-    previewPercent: 68
+    previewPercent: 68,
+
+    // Spielerprofil oben rechts (Discord-Avatar, Name, Online-Status).
+    // In server.cfg optional:
+    //   setr loadingscreen:use_lanyard true
+    //   setr loadingscreen:discord_bot_token ""
+    // Lanyard liefert echten Discord-Status; alternativ Bot-Token nur für Avatar/Name.
+    showPlayerProfile: true,
+
+    // Nur für Browser-Vorschau – FiveM ersetzt das per playerProfile Event.
+    profilePreview: {
+        name: 'Max Mustermann',
+        discordUsername: 'max_rp',
+        discordStatus: 'online',
+        statusLabel: 'Online',
+        avatar: 'https://cdn.discordapp.com/embed/avatars/0.png'
+    }
 };

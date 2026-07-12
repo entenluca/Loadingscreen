@@ -24,6 +24,21 @@
     </div>
 
     <div class="layout">
+        <aside id="playerProfile" class="player-profile anim" style="--delay: 0.12s" aria-label="Spielerprofil" hidden>
+            <div class="player-profile-glow" aria-hidden="true"></div>
+            <div class="player-profile-inner">
+                <div class="player-avatar-wrap">
+                    <img id="profileAvatar" class="player-avatar" alt="" />
+                    <span id="profileStatusDot" class="player-status-dot" aria-hidden="true"></span>
+                </div>
+                <div class="player-profile-meta">
+                    <strong id="profileName" class="player-name">Spieler</strong>
+                    <span id="profileUsername" class="player-username">@discord</span>
+                    <span id="profileStatus" class="player-status-label">Verbindet...</span>
+                </div>
+            </div>
+        </aside>
+
         <header class="brand anim" style="--delay: 0.05s">
             <div class="brand-badge">
                 <span class="brand-dot"></span>

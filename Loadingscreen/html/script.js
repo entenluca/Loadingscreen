@@ -20,8 +20,16 @@
     const progressPercent = byId('progressPercent');
     const loadingStatus = byId('loadingStatus');
     const progressTrack = document.querySelector('.progress-track');
+    const playerProfile = byId('playerProfile');
+    const profileAvatar = byId('profileAvatar');
+    const profileName = byId('profileName');
+    const profileUsername = byId('profileUsername');
+    const profileStatus = byId('profileStatus');
+    const profileStatusDot = byId('profileStatusDot');
 
     const ICONS = window.ICON_LIBRARY || {};
+
+    const PROFILE_STATUS_CLASSES = ['is-idle', 'is-dnd', 'is-offline', 'is-loading', 'is-connecting'];
 
     const LOADING_PHASES = [
         { until: 25, text: 'Verbindung wird hergestellt' },
@@ -228,12 +236,95 @@
         if (progressTrack) progressTrack.setAttribute('aria-valuenow', String(safePercent));
     }
 
+    function normalizeMessageData(rawData) {
+        let data = rawData;
+
+        if (typeof data === 'string') {
+            try {
+                data = JSON.parse(data);
+            } catch {
+                return null;
+            }
+        }
+
+        return data && typeof data === 'object' ? data : null;
+    }
+
+    function applyProfileStatus(status) {
+        const normalized = String(status || 'connecting').toLowerCase();
+
+        if (profileStatusDot) {
+            profileStatusDot.className = 'player-status-dot';
+            if (normalized !== 'online') {
+                profileStatusDot.classList.add(`is-${normalized}`);
+            }
+        }
+
+        if (profileStatus) {
+            profileStatus.className = 'player-status-label';
+            PROFILE_STATUS_CLASSES.forEach((className) => profileStatus.classList.remove(className));
+            if (normalized !== 'online') {
+                profileStatus.classList.add(`is-${normalized}`);
+            }
+        }
+    }
+
+    function renderPlayerProfile(profile) {
+        if (!playerProfile || cfg.showPlayerProfile === false) {
+            hideElement(playerProfile);
+            if (playerProfile) playerProfile.hidden = true;
+            return;
+        }
+
+        if (!profile || typeof profile !== 'object') {
+            return;
+        }
+
+        const name = profile.name || profile.discordUsername || 'Spieler';
+        const username = profile.discordUsername || '';
+        const status = profile.discordStatus || 'connecting';
+        const statusLabel = profile.statusLabel || 'Verbindet...';
+
+        setText(profileName, name);
+
+        if (profileUsername) {
+            if (username && username !== name) {
+                const handle = username.startsWith('@') ? username : `@${username}`;
+                setText(profileUsername, handle);
+                profileUsername.hidden = false;
+            } else {
+                profileUsername.hidden = true;
+            }
+        }
+
+        if (profileAvatar) {
+            if (typeof profile.avatar === 'string' && profile.avatar.trim() !== '') {
+                profileAvatar.src = profile.avatar;
+                profileAvatar.alt = `${name} – Discord Avatar`;
+            } else {
+                profileAvatar.removeAttribute('src');
+                profileAvatar.alt = '';
+            }
+        }
+
+        applyProfileStatus(status);
+        setText(profileStatus, statusLabel);
+
+        playerProfile.hidden = false;
+        showElement(playerProfile, 'block');
+    }
+
     window.addEventListener('message', (event) => {
-        const data = event.data || {};
+        const data = normalizeMessageData(event.data);
+        if (!data) return;
 
         if (data.eventName === 'loadProgress' && typeof data.loadFraction === 'number') {
             state.gotFiveMProgress = true;
             setProgress(data.loadFraction * 100);
+        }
+
+        if (data.eventName === 'playerProfile' && data.profile) {
+            renderPlayerProfile(data.profile);
         }
     });
 
@@ -259,4 +350,8 @@
 
     updateSoundUI();
     setupBackground();
+
+    if (cfg.showPlayerProfile !== false && cfg.profilePreview) {
+        renderPlayerProfile(cfg.profilePreview);
+    }
 })();
