@@ -1,6 +1,52 @@
 (() => {
-    const cfg = window.LOADING_CONFIG || {};
     const ICONS = window.ICON_LIBRARY || {};
+
+    function mergeConfig(base, override) {
+        const result = { ...base };
+
+        if (!override || typeof override !== 'object') {
+            return result;
+        }
+
+        Object.keys(override).forEach((key) => {
+            const value = override[key];
+            if (value === undefined || value === null) return;
+
+            if (
+                typeof value === 'object' &&
+                !Array.isArray(value) &&
+                typeof base[key] === 'object' &&
+                !Array.isArray(base[key])
+            ) {
+                result[key] = { ...base[key], ...value };
+            } else {
+                result[key] = value;
+            }
+        });
+
+        return result;
+    }
+
+    async function loadRuntimeConfig() {
+        const defaults = window.LOADING_CONFIG || {};
+
+        try {
+            const response = await fetch(`runtime-config.json?ts=${Date.now()}`);
+            if (!response.ok) return defaults;
+
+            const runtime = await response.json();
+            if (!runtime || typeof runtime !== 'object' || Object.keys(runtime).length === 0) {
+                return defaults;
+            }
+
+            return mergeConfig(defaults, runtime);
+        } catch (_) {
+            return defaults;
+        }
+    }
+
+    async function bootstrap() {
+    const cfg = await loadRuntimeConfig();
 
     const byId = (id) => document.getElementById(id);
     const bgVideo = byId('bgVideo');
@@ -472,4 +518,7 @@
             if (!event.repeat) toggleSound();
         }
     });
+    }
+
+    bootstrap();
 })();

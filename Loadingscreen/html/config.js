@@ -1,11 +1,6 @@
-// Hier kannst du den LoadingScreen schnell anpassen.
-//
-// Hintergrund-Modus:
-// - mediaMode: 'video'  = MP4-Video aus backgroundVideo verwenden
-// - mediaMode: 'images' = PNG-Bilder aus backgroundImages als Slideshow verwenden
-//
-// MP4-Hintergrund: Lege deine Datei als html/assets/background.mp4 ab.
-// PNG-Slideshow: Lege deine Bilder z. B. als html/assets/slide-1.png, slide-2.png ... ab.
+// Fallback-Konfiguration für Browser-Vorschau.
+// Im Spiel wird diese Datei mit html/runtime-config.json zusammengeführt,
+// die vom Server über das ox_lib Admin-Panel (/loadingscreen) geschrieben wird.
 window.LOADING_CONFIG = {
     accentColor: '#5b9cff',
 
