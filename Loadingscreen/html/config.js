@@ -61,10 +61,9 @@ window.LOADING_CONFIG = {
     previewPercent: 68,
 
     // Spielerprofil oben rechts (Discord-Avatar, Name, Online-Status).
-    // In server.cfg:
-    //   setr loadingscreen:discord_bot_token "DEIN_BOT_TOKEN"   ← Avatar + Anzeigename + @username
-    //   setr loadingscreen:use_lanyard true                      ← echter Online-Status (Spieler braucht Lanyard)
-    // Discord-Docs: https://discord.com/developers/docs/resources/user
+    // Bot-Token sicher NUR in der server.cfg setzen – siehe server/convars.example.cfg
+    //   set loadingscreen:discord_bot_token "..."   (set, nicht setr!)
+    //   set loadingscreen:use_lanyard true
     showPlayerProfile: true,
 
     // Nur für Browser-Vorschau – FiveM ersetzt das per playerProfile Event.
