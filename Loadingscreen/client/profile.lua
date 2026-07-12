@@ -17,10 +17,13 @@ RegisterNetEvent('loadingscreen:client:receiveProfile', function(profile)
     pushProfileToLoadscreen(profile)
 end)
 
--- Avatar kommt erst nach dem Connect (nicht blockierend im playerConnecting)
 CreateThread(function()
-    Wait(1500)
-    requestProfile()
+    Wait(300)
+
+    for _ = 1, 25 do
+        requestProfile()
+        Wait(800)
+    end
 end)
 
 exports('RefreshPlayerProfile', requestProfile)

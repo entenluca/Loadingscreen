@@ -84,16 +84,20 @@ local function defaultAvatar(discordId, discriminator)
     return nil
 end
 
-local function buildAvatarUrl(discordId, avatarHash, discriminator)
+local function buildAvatarUrl(discordId, avatarHash, discriminator, size)
+    size = size or 128
+
     if avatarHash and avatarHash ~= '' then
         local extension = avatarHash:sub(1, 2) == 'a_' and 'gif' or 'png'
-        return ('https://cdn.discordapp.com/avatars/%s/%s.%s?size=128'):format(discordId, avatarHash, extension)
+        return ('https://cdn.discordapp.com/avatars/%s/%s.%s?size=%d'):format(discordId, avatarHash, extension, size)
     end
 
     return defaultAvatar(discordId, discriminator)
 end
 
-local function parseDiscordUser(user, discordId)
+local function parseDiscordUser(user, discordId, avatarSize)
+    avatarSize = avatarSize or 128
+
     if type(user) ~= 'table' then
         return nil
     end
@@ -107,7 +111,7 @@ local function parseDiscordUser(user, discordId)
     local displayName = (type(globalName) == 'string' and globalName ~= '') and globalName or username
 
     return {
-        avatarUrl = buildAvatarUrl(discordId, user.avatar, user.discriminator),
+        avatarUrl = buildAvatarUrl(discordId, user.avatar, user.discriminator, avatarSize),
         displayName = displayName,
         username = username,
         discriminator = user.discriminator
@@ -187,7 +191,7 @@ local function fetchLanyardProfile(discordId)
     end
 
     local data = decoded.data
-    local userData = parseDiscordUser(data.discord_user, discordId)
+    local userData = parseDiscordUser(data.discord_user, discordId, 128)
 
     if not userData then
         return nil
@@ -197,7 +201,9 @@ local function fetchLanyardProfile(discordId)
     return userData
 end
 
-local function fetchDiscordProfile(discordId)
+local function fetchDiscordProfile(discordId, avatarSize)
+    avatarSize = avatarSize or 128
+
     local token = GetConvar('loadingscreen:discord_bot_token', '')
     if token == '' then
         debugLog('Kein Bot-Token gesetzt (set loadingscreen:discord_bot_token "...")')
@@ -220,7 +226,7 @@ local function fetchDiscordProfile(discordId)
     end
 
     local user = json.decode(response.body)
-    local userData = parseDiscordUser(user, discordId)
+    local userData = parseDiscordUser(user, discordId, avatarSize)
 
     if not userData then
         return nil
@@ -265,7 +271,7 @@ function BuildPlayerProfileFromData(discordId, playerName, options)
         return embedAvatar(profile, skipAvatar)
     end
 
-    local userData = fetchDiscordProfile(discordId)
+    local userData = fetchDiscordProfile(discordId, options.avatarSize or 128)
     local discordStatus = nil
 
     if getConvarBool('loadingscreen:use_lanyard', true) then
@@ -319,18 +325,29 @@ AddEventHandler('playerConnecting', function(playerName, _, deferrals)
     deferrals.defer()
     Wait(0)
 
-    -- Sofort auslesen – source wird waehrend HTTP-Anfragen ungueltig!
     local src = source
     local capturedName = playerName or 'Spieler'
-    local capturedDiscordId = getDiscordId(src)
+    local capturedDiscordId = nil
+
+    if isValidSource(src) then
+        for _ = 1, 10 do
+            capturedDiscordId = getDiscordId(src)
+            if capturedDiscordId then
+                break
+            end
+            Wait(0)
+        end
+    end
 
     deferrals.update('Verbindung wird hergestellt...')
 
     local profile = buildFallbackProfile(capturedName, capturedDiscordId)
 
     local ok, result = pcall(function()
-        -- Beim Connect kein Avatar-Download: schneller + stabiler
-        return BuildPlayerProfileFromData(capturedDiscordId, capturedName, { skipAvatar = true })
+        return BuildPlayerProfileFromData(capturedDiscordId, capturedName, {
+            skipAvatar = false,
+            avatarSize = 64
+        })
     end)
 
     if ok and type(result) == 'table' then

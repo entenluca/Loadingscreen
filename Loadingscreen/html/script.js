@@ -22,6 +22,7 @@
     const progressTrack = document.querySelector('.progress-track');
     const playerProfile = byId('playerProfile');
     const profileAvatar = byId('profileAvatar');
+    const profileInitial = byId('profileInitial');
     const profileName = byId('profileName');
     const profileUsername = byId('profileUsername');
     const profileStatus = byId('profileStatus');
@@ -269,6 +270,21 @@
         }
     }
 
+    function shouldShowProfile(profile) {
+        if (!profile || typeof profile !== 'object') {
+            return false;
+        }
+
+        return !!(profile.displayName || profile.name || profile.discordId || profile.discordUsername || profile.username);
+    }
+
+    function setProfileInitial(displayName) {
+        if (!profileInitial) return;
+
+        const letter = String(displayName || '?').trim().charAt(0).toUpperCase() || '?';
+        profileInitial.textContent = letter;
+    }
+
     function renderPlayerProfile(profile) {
         if (!playerProfile || cfg.showPlayerProfile === false) {
             hideElement(playerProfile);
@@ -276,7 +292,7 @@
             return;
         }
 
-        if (!isRealPlayerProfile(profile)) {
+        if (!shouldShowProfile(profile)) {
             hideElement(playerProfile);
             if (playerProfile) playerProfile.hidden = true;
             return;
@@ -289,6 +305,7 @@
         const avatarSrc = profile.avatar || profile.avatarUrl || '';
 
         setText(profileName, displayName);
+        setProfileInitial(displayName);
 
         if (profileUsername) {
             if (username) {
@@ -300,6 +317,8 @@
             }
         }
 
+        const avatarWrap = profileAvatar ? profileAvatar.closest('.player-avatar-wrap') : null;
+
         if (profileAvatar) {
             profileAvatar.alt = '';
             profileAvatar.classList.remove('is-fallback');
@@ -308,11 +327,16 @@
                 profileAvatar.onerror = () => {
                     profileAvatar.removeAttribute('src');
                     profileAvatar.classList.add('is-fallback');
+                    if (avatarWrap) avatarWrap.classList.remove('has-avatar');
+                };
+                profileAvatar.onload = () => {
+                    if (avatarWrap) avatarWrap.classList.add('has-avatar');
                 };
                 profileAvatar.src = avatarSrc;
             } else {
                 profileAvatar.removeAttribute('src');
                 profileAvatar.classList.add('is-fallback');
+                if (avatarWrap) avatarWrap.classList.remove('has-avatar');
             }
         }
 
@@ -321,23 +345,6 @@
 
         playerProfile.hidden = false;
         showElement(playerProfile, 'block');
-    }
-
-    function isInFiveM() {
-        if (typeof window.invokeNative === 'function') {
-            return true;
-        }
-
-        const handover = window.nuiHandoverData;
-        return !!(handover && typeof handover.serverAddress === 'string');
-    }
-
-    function isRealPlayerProfile(profile) {
-        if (!profile || typeof profile !== 'object') {
-            return false;
-        }
-
-        return !!(profile.discordId || profile.discordUsername || profile.username);
     }
 
     function readHandoverProfile() {
