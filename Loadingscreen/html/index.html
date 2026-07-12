@@ -17,56 +17,55 @@
     <div class="shade"></div>
     <div class="vignette"></div>
 
-    <div class="ambient" aria-hidden="true">
-        <div class="orb orb-a"></div>
-        <div class="orb orb-b"></div>
-        <div class="grid-overlay"></div>
-    </div>
+    <div class="ui-shell">
+        <aside class="sidebar sidebar-left" aria-label="Server-Informationen">
+            <header class="welcome-block">
+                <h2 id="welcomeTitle">WELCOME TO SERVER</h2>
+                <p id="welcomeText">Willkommen auf unserem Roleplay-Server.</p>
+            </header>
 
-    <div class="layout">
-        <header class="brand anim" style="--delay: 0.05s">
-            <div class="brand-badge">
-                <span class="brand-dot"></span>
-                <span id="brandLabel">Roleplay Server</span>
-            </div>
-            <h1 class="brand-title">
-                <span id="titleWhite" class="title-white">MB</span>
-                <span id="titleYellow" class="title-yellow">DEVELOPMENT</span>
+            <div id="rulesWidget" class="widget"></div>
+            <div id="updatesWidget" class="widget"></div>
+            <div id="galleryWidget" class="widget"></div>
+        </aside>
+
+        <section class="stage" aria-label="Ladebereich">
+            <nav class="top-nav" aria-label="Schnellaktionen">
+                <button type="button" class="nav-btn icon" data-icon="play" aria-label="Abspielen"></button>
+                <button type="button" class="nav-btn icon" data-icon="gamepad-2" aria-label="Steuerung"></button>
+                <button type="button" class="nav-btn icon" data-icon="settings" aria-label="Einstellungen"></button>
+            </nav>
+
+            <h1 class="hero-title" aria-label="Loading Screen">
+                <span id="heroLine1" class="hero-line">LOADING</span>
+                <span id="heroLine2" class="hero-line">SCREEN</span>
             </h1>
-            <p id="subtitle" class="subtitle">Willkommen in deiner neuen Heimat.</p>
-        </header>
 
-        <main class="content">
-            <section class="info-card anim" style="--delay: 0.18s" aria-label="Server-Information">
-                <div class="info-card-glow" aria-hidden="true"></div>
-                <div class="info-card-inner">
-                    <div class="info-heading">
-                        <span id="infoIcon" class="info-icon icon" aria-hidden="true"></span>
-                        <strong id="infoTitle">Wichtige Information</strong>
-                    </div>
-                    <p id="infoText">Um im Supportfall schnelle und korrekte Entscheidungen treffen zu können, empfehlen wir euch, passende Videobeweise (Clips) für mögliche Supportgespräche bereitzuhalten.</p>
-                </div>
-            </section>
-        </main>
+            <div id="videoControls" class="video-controls" role="status" aria-live="polite">
+                <span class="video-label">Video</span>
+                <span id="soundIcon" class="control-icon icon" aria-hidden="true"></span>
+                <span id="soundText" class="video-hint"><b>[LEERTASTE]</b> Musik stoppen</span>
+            </div>
+        </section>
 
-        <footer class="loader-footer anim" style="--delay: 0.32s">
-            <div class="loader-meta">
-                <div class="loader-status">
-                    <span id="loadingStatus" class="loading-status">Ressourcen werden geladen</span>
-                    <span class="loading-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+        <aside class="sidebar sidebar-right" aria-label="Team und Medien">
+            <div id="teamWidget" class="widget"></div>
+            <div id="musicWidget" class="widget"></div>
+            <div id="socialsWidget" class="widget"></div>
+        </aside>
+
+        <footer class="load-footer">
+            <div class="footer-left">
+                <span class="footer-label">Loading...</span>
+                <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <div id="progressFill" class="progress-fill"></div>
                 </div>
+            </div>
+            <div class="footer-center">
+                <span id="loadingStatus">Ressourcen werden geladen...</span>
+            </div>
+            <div class="footer-right">
                 <span id="progressPercent" class="progress-percent">0%</span>
-            </div>
-
-            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                <div id="progressFill" class="progress-fill">
-                    <div class="progress-shimmer" aria-hidden="true"></div>
-                </div>
-            </div>
-
-            <div id="soundToggle" class="sound-toggle" role="status" aria-live="polite">
-                <span id="soundIcon" class="sound-icon icon" aria-hidden="true"></span>
-                <span id="soundText"><b>[LEERTASTE]</b> Musik stoppen</span>
             </div>
         </footer>
     </div>

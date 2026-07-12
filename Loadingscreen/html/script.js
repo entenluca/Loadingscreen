@@ -1,33 +1,26 @@
 (() => {
     const cfg = window.LOADING_CONFIG || {};
+    const ICONS = window.ICON_LIBRARY || {};
 
     const byId = (id) => document.getElementById(id);
-    const titleWhite = byId('titleWhite');
-    const titleYellow = byId('titleYellow');
-    const subtitle = byId('subtitle');
-    const brandLabel = byId('brandLabel');
-    const infoIcon = byId('infoIcon');
-    const infoTitle = byId('infoTitle');
-    const infoText = byId('infoText');
     const bgVideo = byId('bgVideo');
     const bgAudio = byId('bgAudio');
     const bgImageA = byId('bgImageA');
     const bgImageB = byId('bgImageB');
-    const soundToggle = byId('soundToggle');
     const soundIcon = byId('soundIcon');
     const soundText = byId('soundText');
     const progressFill = byId('progressFill');
     const progressPercent = byId('progressPercent');
     const loadingStatus = byId('loadingStatus');
     const progressTrack = document.querySelector('.progress-track');
-
-    const ICONS = window.ICON_LIBRARY || {};
+    const volumeFill = () => document.querySelector('.volume-fill');
+    const musicVisualizer = () => document.querySelector('.music-visualizer');
 
     const LOADING_PHASES = [
-        { until: 25, text: 'Verbindung wird hergestellt' },
-        { until: 55, text: 'Ressourcen werden geladen' },
-        { until: 85, text: 'Welt wird vorbereitet' },
-        { until: 100, text: 'Fast geschafft' }
+        { until: 25, text: 'Verbindung wird hergestellt...' },
+        { until: 55, text: 'Ressourcen werden geladen...' },
+        { until: 85, text: 'Welt wird vorbereitet...' },
+        { until: 100, text: 'Es ist nicht mehr viel übrig, bitte warten.....' }
     ];
 
     const state = {
@@ -56,6 +49,20 @@
         if (el) el.style.display = 'none';
     }
 
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function applyTheme() {
+        if (typeof cfg.accentColor === 'string' && cfg.accentColor.trim()) {
+            document.documentElement.style.setProperty('--accent', cfg.accentColor.trim());
+        }
+    }
+
     function resolveLoadingStatus(percent) {
         const customPhases = Array.isArray(cfg.loadingPhases) ? cfg.loadingPhases : null;
 
@@ -63,27 +70,231 @@
             for (const phase of customPhases) {
                 if (percent <= phase.until) return phase.text;
             }
-            return customPhases[customPhases.length - 1]?.text || 'Wird geladen';
+            return customPhases[customPhases.length - 1]?.text || 'Wird geladen...';
         }
 
         for (const phase of LOADING_PHASES) {
             if (percent <= phase.until) return phase.text;
         }
 
-        return 'Fast geschafft';
+        return 'Fast geschafft...';
     }
 
-    setText(titleWhite, cfg.serverTitleWhite || 'OSNABRÜCK');
-    setText(titleYellow, cfg.serverTitleYellow || 'ROLEPLAY');
-    setText(subtitle, cfg.subtitle || 'Willkommen in deiner neuen Heimat.');
-    setText(brandLabel, cfg.brandLabel || 'Roleplay Server');
-    setIcon(infoIcon, cfg.infoIcon || cfg.infoEmoji, 'video');
-    setText(infoTitle, cfg.infoTitle || 'Wichtige Information');
-    setText(infoText, cfg.infoText || 'Um im Supportfall schnelle und korrekte Entscheidungen treffen zu können, empfehlen wir euch, passende Videobeweise (Clips) für mögliche Supportgespräche bereitzuhalten.');
+    function renderAvatar(item, fallbackName) {
+        const name = item?.name || fallbackName || '?';
+        const initial = escapeHtml(name.charAt(0).toUpperCase());
+
+        if (typeof item?.avatar === 'string' && item.avatar.trim()) {
+            return `<div class="avatar"><img src="${escapeHtml(item.avatar)}" alt="" /></div>`;
+        }
+
+        return `<div class="avatar" aria-hidden="true">${initial}</div>`;
+    }
+
+    function createWidget(title, bodyHtml, options = {}) {
+        const widget = document.createElement('div');
+        widget.className = 'widget';
+
+        if (options.open !== false) widget.classList.add('is-open');
+        if (options.static) widget.classList.add('widget-static');
+
+        widget.innerHTML = `
+            <button type="button" class="widget-header">
+                <span>${escapeHtml(title)}</span>
+                <span class="chevron icon">${ICONS['chevron-down'] || ''}</span>
+            </button>
+            <div class="widget-body">${bodyHtml}</div>
+        `;
+
+        if (!options.static) {
+            widget.querySelector('.widget-header').addEventListener('click', () => {
+                widget.classList.toggle('is-open');
+            });
+        }
+
+        return widget;
+    }
+
+    function renderRules() {
+        const container = byId('rulesWidget');
+        if (!container) return;
+
+        const rules = Array.isArray(cfg.serverRules) ? cfg.serverRules : [];
+        if (rules.length === 0) {
+            container.remove();
+            return;
+        }
+
+        const body = rules.map((rule, index) => `
+            <div class="rule-item">
+                <strong>${escapeHtml(rule.title || `Rule #${index + 1}`)}</strong>
+                <p>${escapeHtml(rule.text || '')}</p>
+            </div>
+        `).join('');
+
+        container.replaceWith(createWidget('Server Rules', body, { open: true }));
+    }
+
+    function renderUpdates() {
+        const container = byId('updatesWidget');
+        if (!container) return;
+
+        const updates = Array.isArray(cfg.serverUpdates) ? cfg.serverUpdates : [];
+        if (updates.length === 0) {
+            container.remove();
+            return;
+        }
+
+        const body = updates.map((update) => `
+            <div class="update-item">
+                ${renderAvatar(update, 'Update')}
+                <div class="update-meta">
+                    <span class="update-date">${escapeHtml(update.date || '')}</span>
+                    <span class="update-title">${escapeHtml(update.title || 'Update')}</span>
+                    <p class="update-text">${escapeHtml(update.text || '')}</p>
+                </div>
+            </div>
+        `).join('');
+
+        container.replaceWith(createWidget('Server Update', body, { open: true }));
+    }
+
+    function renderGallery() {
+        const container = byId('galleryWidget');
+        if (!container) return;
+
+        const images = Array.isArray(cfg.galleryImages) ? cfg.galleryImages.filter(Boolean) : [];
+        if (images.length === 0) {
+            container.remove();
+            return;
+        }
+
+        const body = `
+            <div class="gallery-grid">
+                ${images.map((src) => `<div class="gallery-item" style="background-image:url('${escapeHtml(src)}')"></div>`).join('')}
+            </div>
+        `;
+
+        container.replaceWith(createWidget('Server Gallery', body, { open: true }));
+    }
+
+    function renderTeam() {
+        const container = byId('teamWidget');
+        if (!container) return;
+
+        const members = Array.isArray(cfg.teamMembers) ? cfg.teamMembers : [];
+        if (members.length === 0) {
+            container.remove();
+            return;
+        }
+
+        const body = members.map((member) => `
+            <div class="team-item">
+                ${renderAvatar(member, 'Team')}
+                <div class="team-info">
+                    <span class="team-role">${escapeHtml(member.role || 'Team')}</span>
+                    <span class="team-name">${escapeHtml(member.name || 'Unbekannt')}</span>
+                    <span class="team-discord">${escapeHtml(member.discord || '')}</span>
+                </div>
+            </div>
+        `).join('');
+
+        container.replaceWith(createWidget('Authorized Teams', body, { open: true }));
+    }
+
+    function renderMusic() {
+        const container = byId('musicWidget');
+        if (!container) return;
+
+        const music = cfg.music || {};
+        const body = `
+            <div class="music-body">
+                <div class="music-track">
+                    <span class="music-title">${escapeHtml(music.title || 'Background Music')}</span>
+                    <span class="music-artist">${escapeHtml(music.artist || 'Unbekannt')}</span>
+                </div>
+                <div class="music-visualizer${state.muted ? ' is-muted' : ''}" aria-hidden="true">
+                    ${Array.from({ length: 8 }, () => '<span></span>').join('')}
+                </div>
+                <div class="volume-track" aria-hidden="true">
+                    <div class="volume-fill"></div>
+                </div>
+            </div>
+        `;
+
+        container.replaceWith(createWidget('Music', body, { static: true, open: true }));
+    }
+
+    function renderSocials() {
+        const container = byId('socialsWidget');
+        if (!container) return;
+
+        const socials = Array.isArray(cfg.socials) ? cfg.socials : [];
+        if (socials.length === 0) {
+            container.remove();
+            return;
+        }
+
+        const body = `
+            <div class="socials-grid">
+                ${socials.map((social) => {
+                    const label = escapeHtml(social.label || 'Link');
+                    const url = typeof social.url === 'string' ? social.url.trim() : '';
+                    if (url) {
+                        return `<a class="social-btn" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+                    }
+                    return `<span class="social-btn">${label}</span>`;
+                }).join('')}
+            </div>
+        `;
+
+        container.replaceWith(createWidget('Socials', body, { open: true }));
+    }
+
+    function renderNavIcons() {
+        document.querySelectorAll('.nav-btn[data-icon]').forEach((btn) => {
+            setIcon(btn, btn.dataset.icon, 'play');
+        });
+    }
+
+    function renderHeroTitle() {
+        const line1 = byId('heroLine1');
+        const line2 = byId('heroLine2');
+
+        if (Array.isArray(cfg.centerTitle) && cfg.centerTitle.length >= 2) {
+            setText(line1, cfg.centerTitle[0]);
+            setText(line2, cfg.centerTitle[1]);
+            return;
+        }
+
+        if (typeof cfg.centerTitle === 'string' && cfg.centerTitle.trim()) {
+            const parts = cfg.centerTitle.trim().split(/\s+/);
+            setText(line1, parts[0] || 'LOADING');
+            setText(line2, parts.slice(1).join(' ') || 'SCREEN');
+            return;
+        }
+
+        setText(line1, cfg.serverTitleWhite || 'LOADING');
+        setText(line2, cfg.serverTitleYellow || 'SCREEN');
+    }
+
+    function renderStaticContent() {
+        applyTheme();
+        setText(byId('welcomeTitle'), cfg.welcomeTitle || `WELCOME TO ${(cfg.serverTitleWhite || 'SERVER').toUpperCase()}`);
+        setText(byId('welcomeText'), cfg.welcomeText || cfg.subtitle || 'Willkommen auf unserem Roleplay-Server.');
+        renderHeroTitle();
+        renderNavIcons();
+        renderRules();
+        renderUpdates();
+        renderGallery();
+        renderTeam();
+        renderMusic();
+        renderSocials();
+    }
 
     function updateSoundUI() {
         if (state.soundElement) state.soundElement.muted = state.muted;
-        if (soundToggle) soundToggle.setAttribute('data-muted', String(state.muted));
+
         setIcon(soundIcon, state.muted ? (cfg.musicStoppedIcon || cfg.musicStoppedEmoji) : (cfg.musicPlayingIcon || cfg.musicPlayingEmoji), state.muted ? 'volume-off' : 'volume-high');
 
         if (soundText) {
@@ -91,6 +302,12 @@
                 ? '<b>[LEERTASTE]</b> Musik starten'
                 : '<b>[LEERTASTE]</b> Musik stoppen';
         }
+
+        const visualizer = musicVisualizer();
+        if (visualizer) visualizer.classList.toggle('is-muted', state.muted);
+
+        const volume = volumeFill();
+        if (volume) volume.style.width = state.muted ? '0%' : '72%';
     }
 
     function tryPlay(mediaElement, onBlocked) {
@@ -134,13 +351,8 @@
         bgVideo.src = cfg.backgroundVideo;
         showElement(bgVideo);
 
-        bgVideo.addEventListener('canplay', () => {
-            showElement(bgVideo);
-        }, { once: true });
-
-        bgVideo.addEventListener('error', () => {
-            hideElement(bgVideo);
-        });
+        bgVideo.addEventListener('canplay', () => showElement(bgVideo), { once: true });
+        bgVideo.addEventListener('error', () => hideElement(bgVideo));
 
         tryPlay(bgVideo, () => {
             state.muted = true;
@@ -237,7 +449,11 @@
         }
     });
 
+    renderStaticContent();
+    updateSoundUI();
+    setupBackground();
     setProgress(state.progress);
+
     const fakeProgress = window.setInterval(() => {
         if (state.gotFiveMProgress) {
             window.clearInterval(fakeProgress);
@@ -256,7 +472,4 @@
             if (!event.repeat) toggleSound();
         }
     });
-
-    updateSoundUI();
-    setupBackground();
 })();
