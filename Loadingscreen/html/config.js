@@ -10,6 +10,15 @@ window.LOADING_CONFIG = {
     serverTitleWhite: 'MINDEN',
     serverTitleYellow: 'ROLEPLAY',
     subtitle: 'Willkommen in deiner neuen Heimat.',
+    brandLabel: 'Roleplay Server',
+
+    // Optional: Lade-Phasen fuer die Statusanzeige (until = Prozent bis einschliesslich)
+    // loadingPhases: [
+    //     { until: 25, text: 'Verbindung wird hergestellt' },
+    //     { until: 55, text: 'Ressourcen werden geladen' },
+    //     { until: 85, text: 'Welt wird vorbereitet' },
+    //     { until: 100, text: 'Fast geschafft' }
+    // ],
 
     // 'video' oder 'images'
     mediaMode: 'video',
