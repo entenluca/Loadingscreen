@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MB Development - LoadingScreen</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="background">
+        <video id="bgVideo" autoplay playsinline loop></video>
+        <audio id="bgAudio" loop></audio>
+        <div id="bgImageA" class="bg-image"></div>
+        <div id="bgImageB" class="bg-image"></div>
+    </div>
+
+    <div class="shade"></div>
+    <div class="vignette"></div>
+
+    <main class="panel" aria-label="Loading Screen Inhalt">
+        <h1>
+            <span id="titleWhite" class="title-white">MB</span>
+            <span id="titleYellow" class="title-yellow">DEVELOPMENT</span>
+        </h1>
+
+        <p id="subtitle" class="subtitle">Willkommen in deiner neuen Heimat.</p>
+
+        <section class="info-box">
+            <div class="accent"></div>
+            <div class="info-content">
+                <div class="info-heading">
+                    <span id="infoIcon" class="info-icon icon" aria-hidden="true"></span>
+                    <strong id="infoTitle">Wichtige Information</strong>
+                </div>
+                <p id="infoText">Um im Supportfall schnelle und korrekte Entscheidungen treffen zu können, empfehlen wir euch, passende Videobeweise (Clips) für mögliche Supportgespräche bereitzuhalten.</p>
+            </div>
+        </section>
+
+        <div id="soundToggle" class="sound-toggle" role="status" aria-live="polite">
+            <span class="accent"></span>
+            <span id="soundIcon" class="sound-icon icon" aria-hidden="true"></span>
+            <span id="soundText"><b>[LEERTASTE]</b> Musik stoppen</span>
+        </div>
+    </main>
+    <div class="progress-track" aria-hidden="true">
+        <div id="progressFill" class="progress-fill"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="icons.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
