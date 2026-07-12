@@ -20,13 +20,19 @@ window.LOADING_CONFIG = {
     //     { until: 100, text: 'Fast geschafft' }
     // ],
 
-    // 'video' oder 'images'
+    // 'video' oder 'images' – Standard, wenn Spieler noch nichts gespeichert hat
     mediaMode: 'video',
 
-    // Video-Modus
+    // Spieler duerfen zwischen Video und Bildern wechseln (wird in localStorage gespeichert)
+    allowMediaSwitch: true,
+    mediaStorageKey: 'loadingscreen_media_mode',
+    mediaVideoLabel: 'Video',
+    mediaImagesLabel: 'Bilder',
+
+    // Video-Modus – MP4 in html/assets/ ablegen
     backgroundVideo: 'assets/background.mp4',
 
-    // Bilder-Modus / Slideshow. Nur PNG-Dateien eintragen, wenn mediaMode: 'images' aktiv ist.
+    // Bilder-Modus / Slideshow – PNG in html/assets/ ablegen
     backgroundImages: [
         'assets/slide-1.png',
         'assets/slide-2.png',

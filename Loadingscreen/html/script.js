@@ -16,6 +16,9 @@
     const soundToggle = byId('soundToggle');
     const soundIcon = byId('soundIcon');
     const soundText = byId('soundText');
+    const mediaToggle = byId('mediaToggle');
+    const mediaIcon = byId('mediaIcon');
+    const mediaText = byId('mediaText');
     const progressFill = byId('progressFill');
     const progressPercent = byId('progressPercent');
     const loadingStatus = byId('loadingStatus');
@@ -54,8 +57,81 @@
         gotFiveMProgress: false,
         muted: !!cfg.startMuted,
         soundElement: null,
-        mediaMode: String(cfg.mediaMode || 'video').toLowerCase() === 'images' ? 'images' : 'video'
+        mediaMode: 'video',
+        slideshowIntervalId: null
     };
+
+    function getMediaStorageKey() {
+        return typeof cfg.mediaStorageKey === 'string' && cfg.mediaStorageKey.trim() !== ''
+            ? cfg.mediaStorageKey.trim()
+            : 'loadingscreen_media_mode';
+    }
+
+    function getBackgroundImages() {
+        const imagesFromArray = Array.isArray(cfg.backgroundImages) ? cfg.backgroundImages : [];
+        return imagesFromArray
+            .concat(typeof cfg.backgroundImage === 'string' ? [cfg.backgroundImage] : [])
+            .filter((src, index, arr) => typeof src === 'string' && src.trim() !== '' && arr.indexOf(src) === index);
+    }
+
+    function hasVideoBackground() {
+        return typeof cfg.backgroundVideo === 'string' && cfg.backgroundVideo.trim() !== '';
+    }
+
+    function hasImageBackground() {
+        return getBackgroundImages().length > 0;
+    }
+
+    function normalizeMediaMode(mode) {
+        return String(mode || '').toLowerCase() === 'images' ? 'images' : 'video';
+    }
+
+    function loadSavedMediaMode() {
+        const fallback = normalizeMediaMode(cfg.mediaMode || 'video');
+
+        try {
+            const saved = localStorage.getItem(getMediaStorageKey());
+            if (saved === 'video' || saved === 'images') {
+                return saved;
+            }
+        } catch {
+            // localStorage in CEF manchmal blockiert – Fallback nutzen
+        }
+
+        return fallback;
+    }
+
+    function saveMediaMode(mode) {
+        try {
+            localStorage.setItem(getMediaStorageKey(), mode);
+        } catch {
+            // Speichern optional – Modus gilt trotzdem fuer diese Session
+        }
+    }
+
+    function resolveMediaMode(mode) {
+        let resolved = normalizeMediaMode(mode);
+
+        if (resolved === 'video' && !hasVideoBackground() && hasImageBackground()) {
+            resolved = 'images';
+        }
+
+        if (resolved === 'images' && !hasImageBackground() && hasVideoBackground()) {
+            resolved = 'video';
+        }
+
+        return resolved;
+    }
+
+    function canSwitchMedia() {
+        if (cfg.allowMediaSwitch === false) {
+            return false;
+        }
+
+        return hasVideoBackground() && hasImageBackground();
+    }
+
+    state.mediaMode = resolveMediaMode(loadSavedMediaMode());
 
     function setText(el, value) {
         if (el && typeof value === 'string') el.textContent = value;
@@ -132,6 +208,82 @@
         });
     }
 
+    function updateMediaUI() {
+        if (!mediaToggle) return;
+
+        mediaToggle.setAttribute('data-mode', state.mediaMode);
+        setIcon(
+            mediaIcon,
+            state.mediaMode === 'images' ? (cfg.mediaImagesIcon || 'image') : (cfg.mediaVideoIcon || 'video'),
+            state.mediaMode === 'images' ? 'image' : 'video'
+        );
+
+        const label = state.mediaMode === 'images'
+            ? (cfg.mediaImagesLabel || 'Bilder')
+            : (cfg.mediaVideoLabel || 'Video');
+
+        setText(mediaText, label);
+        mediaToggle.setAttribute(
+            'title',
+            state.mediaMode === 'images'
+                ? 'Zu Video-Hintergrund wechseln'
+                : 'Zu Bild-Hintergrund wechseln'
+        );
+    }
+
+    function resetBackgroundMedia() {
+        if (state.slideshowIntervalId) {
+            window.clearInterval(state.slideshowIntervalId);
+            state.slideshowIntervalId = null;
+        }
+
+        if (bgVideo) {
+            bgVideo.pause();
+            bgVideo.removeAttribute('src');
+            if (typeof bgVideo.load === 'function') {
+                bgVideo.load();
+            }
+            hideElement(bgVideo);
+        }
+
+        if (bgAudio) {
+            bgAudio.pause();
+            bgAudio.removeAttribute('src');
+            if (typeof bgAudio.load === 'function') {
+                bgAudio.load();
+            }
+            hideElement(bgAudio);
+        }
+
+        [bgImageA, bgImageB].forEach((layer) => {
+            if (!layer) return;
+            layer.classList.remove('is-active');
+            layer.style.backgroundImage = '';
+            hideElement(layer);
+        });
+
+        state.soundElement = null;
+    }
+
+    function setMediaMode(mode, persist) {
+        const nextMode = resolveMediaMode(mode);
+        state.mediaMode = nextMode;
+
+        if (persist !== false) {
+            saveMediaMode(nextMode);
+        }
+
+        resetBackgroundMedia();
+        setupBackground();
+        updateMediaUI();
+        updateSoundUI();
+    }
+
+    function toggleMediaMode() {
+        const nextMode = state.mediaMode === 'images' ? 'video' : 'images';
+        setMediaMode(nextMode, true);
+    }
+
     function toggleSound() {
         state.muted = !state.muted;
         updateSoundUI();
@@ -142,7 +294,7 @@
     }
 
     function setupVideo() {
-        if (!bgVideo || !cfg.backgroundVideo) return;
+        if (!bgVideo || !hasVideoBackground()) return;
 
         hideElement(bgImageA);
         hideElement(bgImageB);
@@ -175,11 +327,7 @@
 
         hideElement(bgVideo);
 
-        const imagesFromArray = Array.isArray(cfg.backgroundImages) ? cfg.backgroundImages : [];
-        const images = imagesFromArray
-            .concat(typeof cfg.backgroundImage === 'string' ? [cfg.backgroundImage] : [])
-            .filter((src, index, arr) => typeof src === 'string' && src.trim() !== '' && arr.indexOf(src) === index);
-
+        const images = getBackgroundImages();
         if (images.length === 0) return;
 
         const fadeMs = Number.isFinite(cfg.slideshowFadeMs) ? Math.max(0, cfg.slideshowFadeMs) : 800;
@@ -204,7 +352,7 @@
         });
 
         if (images.length > 1) {
-            window.setInterval(() => {
+            state.slideshowIntervalId = window.setInterval(() => {
                 const nextLayerIndex = activeLayerIndex === 0 ? 1 : 0;
                 imageIndex = (imageIndex + 1) % images.length;
 
@@ -337,6 +485,11 @@
             const statusData = await fetchLanyardStatus(profile.discordId);
             if (!statusData || !activeProfile || activeProfile.discordId !== profile.discordId) {
                 return;
+            }
+
+            if (lanyardPollTimer) {
+                window.clearInterval(lanyardPollTimer);
+                lanyardPollTimer = null;
             }
 
             renderPlayerProfile({
@@ -479,7 +632,17 @@
     });
 
     updateSoundUI();
+    updateMediaUI();
     setupBackground();
+
+    if (mediaToggle) {
+        if (canSwitchMedia()) {
+            mediaToggle.hidden = false;
+            mediaToggle.addEventListener('click', toggleMediaMode);
+        } else {
+            mediaToggle.hidden = true;
+        }
+    }
 
     const handoverProfile = readHandoverProfile();
     if (handoverProfile) {
