@@ -61,6 +61,8 @@ window.LOADING_CONFIG = {
     previewPercent: 68,
 
     // Spielerprofil – Bot-Token + Guild-ID in server.cfg (siehe server/convars.example.cfg)
-    // Discord Desktop muss laufen! discord:-ID kommt nur beim Connect von FiveM.
-    showPlayerProfile: true
+    // Online-Status via Lanyard (Discord-Server beitreten: https://discord.gg/UrXF2cfJ7F)
+    showPlayerProfile: true,
+    useLanyard: true,
+    lanyardPollMs: 8000
 };

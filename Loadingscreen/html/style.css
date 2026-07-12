@@ -189,8 +189,7 @@ body {
     flex: 0 0 56px;
     width: 56px;
     height: 56px;
-    overflow: hidden;
-    border-radius: 50%;
+    overflow: visible;
 }
 
 .player-avatar {
@@ -203,6 +202,7 @@ body {
     background: linear-gradient(135deg, rgba(245, 255, 0, 0.25), rgba(255, 255, 255, 0.08));
     font-size: 0;
     color: transparent;
+    overflow: hidden;
 }
 
 .player-initial {
@@ -228,14 +228,16 @@ body {
 
 .player-status-dot {
     position: absolute;
-    right: 1px;
-    bottom: 1px;
+    right: -2px;
+    bottom: -2px;
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    border: 2px solid rgba(12, 12, 12, 0.85);
+    border: 3px solid rgba(12, 12, 12, 0.92);
     background: #43b581;
     box-shadow: 0 0 10px rgba(67, 181, 129, 0.55);
+    z-index: 5;
+    pointer-events: none;
 }
 
 .player-status-dot.is-idle {

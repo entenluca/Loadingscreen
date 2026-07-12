@@ -207,6 +207,21 @@ local function embedAvatar(profile, skipAvatar)
     return profile
 end
 
+local function fetchLanyardStatus(discordId)
+    local response = awaitHttp('GET', ('https://api.lanyard.rest/v1/users/%s'):format(discordId))
+
+    if response.status ~= 200 or response.body == '' then
+        return nil
+    end
+
+    local decoded = json.decode(response.body)
+    if not decoded or not decoded.success or type(decoded.data) ~= 'table' then
+        return nil
+    end
+
+    return decoded.data.discord_status or 'offline'
+end
+
 local function fetchLanyardProfile(discordId)
     local response = awaitHttp('GET', ('https://api.lanyard.rest/v1/users/%s'):format(discordId))
 
@@ -344,12 +359,21 @@ function BuildPlayerProfileFromData(discordId, playerName, options)
     local discordStatus = nil
 
     if getConvarBool('loadingscreen:use_lanyard', true) then
-        local lanyardData = fetchLanyardProfile(discordId)
+        discordStatus = fetchLanyardStatus(discordId)
 
-        if lanyardData then
-            discordStatus = lanyardData.discordStatus
+        if not discordStatus then
+            local lanyardData = fetchLanyardProfile(discordId)
 
-            if not userData then
+            if lanyardData then
+                discordStatus = lanyardData.discordStatus
+
+                if not userData then
+                    userData = lanyardData
+                end
+            end
+        elseif not userData then
+            local lanyardData = fetchLanyardProfile(discordId)
+            if lanyardData then
                 userData = lanyardData
             end
         end
@@ -364,16 +388,16 @@ function BuildPlayerProfileFromData(discordId, playerName, options)
         if discordStatus then
             profile.discordStatus = discordStatus
             profile.isOnline = discordStatus ~= 'offline'
+            profile.statusLabel = resolveStatusLabel(profile.discordStatus)
         else
             profile.discordStatus = 'loading'
             profile.isOnline = false
+            profile.statusLabel = resolveStatusLabel('loading')
         end
-
-        profile.statusLabel = resolveStatusLabel(profile.discordStatus)
     else
         profile.avatarUrl = defaultAvatar(discordId, nil)
-        profile.discordStatus = 'connecting'
-        profile.statusLabel = resolveStatusLabel('connecting')
+        profile.discordStatus = 'loading'
+        profile.statusLabel = resolveStatusLabel('loading')
     end
 
     return embedAvatar(profile, skipAvatar)

@@ -32,6 +32,16 @@
 
     const PROFILE_STATUS_CLASSES = ['is-idle', 'is-dnd', 'is-offline', 'is-loading', 'is-connecting'];
 
+    const LANYARD_STATUS_LABELS = {
+        online: 'Online',
+        idle: 'Abwesend',
+        dnd: 'Bitte nicht stören',
+        offline: 'Offline'
+    };
+
+    let activeProfile = null;
+    let lanyardPollTimer = null;
+
     const LOADING_PHASES = [
         { until: 25, text: 'Verbindung wird hergestellt' },
         { until: 55, text: 'Ressourcen werden geladen' },
@@ -270,6 +280,77 @@
         }
     }
 
+    function resolveStatusLabel(status) {
+        const normalized = String(status || 'connecting').toLowerCase();
+        return LANYARD_STATUS_LABELS[normalized]
+            || (normalized === 'loading' ? 'Status wird geladen...' : 'Verbindet...');
+    }
+
+    async function fetchLanyardStatus(discordId) {
+        if (!discordId) {
+            return null;
+        }
+
+        try {
+            const response = await fetch(`https://api.lanyard.rest/v1/users/${discordId}`);
+            if (!response.ok) {
+                return null;
+            }
+
+            const payload = await response.json();
+            if (!payload || !payload.success || !payload.data) {
+                return null;
+            }
+
+            const status = payload.data.discord_status || 'offline';
+            return {
+                discordStatus: status,
+                statusLabel: resolveStatusLabel(status)
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    function shouldFetchLanyardStatus(profile) {
+        if (cfg.useLanyard === false || !profile || !profile.discordId) {
+            return false;
+        }
+
+        const status = String(profile.discordStatus || '').toLowerCase();
+        return !LANYARD_STATUS_LABELS[status];
+    }
+
+    function scheduleLanyardStatusRefresh(profile) {
+        if (!shouldFetchLanyardStatus(profile)) {
+            return;
+        }
+
+        if (lanyardPollTimer) {
+            window.clearInterval(lanyardPollTimer);
+            lanyardPollTimer = null;
+        }
+
+        const pollMs = Number.isFinite(cfg.lanyardPollMs) ? Math.max(3000, cfg.lanyardPollMs) : 8000;
+
+        const refresh = async () => {
+            const statusData = await fetchLanyardStatus(profile.discordId);
+            if (!statusData || !activeProfile || activeProfile.discordId !== profile.discordId) {
+                return;
+            }
+
+            renderPlayerProfile({
+                ...activeProfile,
+                discordStatus: statusData.discordStatus,
+                statusLabel: statusData.statusLabel,
+                isOnline: statusData.discordStatus !== 'offline'
+            }, { skipLanyard: true });
+        };
+
+        refresh();
+        lanyardPollTimer = window.setInterval(refresh, pollMs);
+    }
+
     function shouldShowProfile(profile) {
         if (!profile || typeof profile !== 'object') {
             return false;
@@ -285,7 +366,9 @@
         profileInitial.textContent = letter;
     }
 
-    function renderPlayerProfile(profile) {
+    function renderPlayerProfile(profile, options) {
+        options = options || {};
+
         if (!playerProfile || cfg.showPlayerProfile === false) {
             hideElement(playerProfile);
             if (playerProfile) playerProfile.hidden = true;
@@ -301,7 +384,7 @@
         const displayName = profile.displayName || profile.name || 'Spieler';
         const username = profile.discordUsername || profile.username || '';
         const status = profile.discordStatus || 'connecting';
-        const statusLabel = profile.statusLabel || 'Verbindet...';
+        const statusLabel = profile.statusLabel || resolveStatusLabel(status);
         const avatarSrc = profile.avatar || profile.avatarUrl || '';
 
         setText(profileName, displayName);
@@ -345,6 +428,12 @@
 
         playerProfile.hidden = false;
         showElement(playerProfile, 'block');
+
+        activeProfile = { ...profile, displayName, discordStatus: status, statusLabel };
+
+        if (!options.skipLanyard) {
+            scheduleLanyardStatusRefresh(activeProfile);
+        }
     }
 
     function readHandoverProfile() {
