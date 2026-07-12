@@ -50,6 +50,24 @@ local function isValidSource(source)
     return type(source) == 'number' and source > 0
 end
 
+local function getAllIdentifiers(source)
+    local list = {}
+
+    if not isValidSource(source) then
+        return list
+    end
+
+    local count = GetNumPlayerIdentifiers(source)
+    for i = 0, count - 1 do
+        local identifier = GetPlayerIdentifier(source, i)
+        if identifier then
+            list[#list + 1] = identifier
+        end
+    end
+
+    return list
+end
+
 local function getDiscordId(source)
     if not isValidSource(source) then
         return nil
@@ -60,10 +78,37 @@ local function getDiscordId(source)
         return identifier:gsub('discord:', '')
     end
 
-    for _, id in ipairs(GetPlayerIdentifiers(source)) do
+    for _, id in ipairs(getAllIdentifiers(source)) do
         if id:find('^discord:') then
             return id:gsub('discord:', '')
         end
+    end
+
+    return nil
+end
+
+local function captureDiscordId(source, playerName)
+    if not isValidSource(source) then
+        return nil
+    end
+
+    for _ = 1, 40 do
+        local discordId = getDiscordId(source)
+        if discordId then
+            return discordId
+        end
+        Wait(50)
+    end
+
+    if isDebugEnabled() then
+        local identifiers = table.concat(getAllIdentifiers(source), ', ')
+        if identifiers == '' then
+            identifiers = '(keine Identifier empfangen)'
+        end
+
+        print(('[Loadingscreen] Keine Discord-ID fuer Spieler %s'):format(playerName or 'Unbekannt'))
+        print(('[Loadingscreen] Empfangene Identifier: %s'):format(identifiers))
+        print('[Loadingscreen] Discord muss in FiveM verknuepft sein: Einstellungen -> Kontoverknuepfungen -> Discord')
     end
 
     return nil
