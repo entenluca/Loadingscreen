@@ -60,9 +60,7 @@ window.LOADING_CONFIG = {
     // Nur für Browser-Vorschau. FiveM überschreibt den Wert per loadProgress Event.
     previewPercent: 68,
 
-    // Spielerprofil oben rechts (Discord-Avatar, Name, Online-Status).
-    // Bot-Token sicher NUR in der server.cfg setzen – siehe server/convars.example.cfg
-    //   set loadingscreen:discord_bot_token "..."   (set, nicht setr!)
-    //   set loadingscreen:use_lanyard true
+    // Spielerprofil – Bot-Token + Guild-ID in server.cfg (siehe server/convars.example.cfg)
+    // Discord Desktop muss laufen! discord:-ID kommt nur beim Connect von FiveM.
     showPlayerProfile: true
 };
