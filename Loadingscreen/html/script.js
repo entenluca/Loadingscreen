@@ -276,7 +276,9 @@
             return;
         }
 
-        if (!profile || typeof profile !== 'object') {
+        if (!isRealPlayerProfile(profile)) {
+            hideElement(playerProfile);
+            if (playerProfile) playerProfile.hidden = true;
             return;
         }
 
@@ -319,6 +321,23 @@
 
         playerProfile.hidden = false;
         showElement(playerProfile, 'block');
+    }
+
+    function isInFiveM() {
+        if (typeof window.invokeNative === 'function') {
+            return true;
+        }
+
+        const handover = window.nuiHandoverData;
+        return !!(handover && typeof handover.serverAddress === 'string');
+    }
+
+    function isRealPlayerProfile(profile) {
+        if (!profile || typeof profile !== 'object') {
+            return false;
+        }
+
+        return !!(profile.discordId || profile.discordUsername || profile.username);
     }
 
     function readHandoverProfile() {
@@ -369,7 +388,5 @@
     const handoverProfile = readHandoverProfile();
     if (handoverProfile) {
         renderPlayerProfile(handoverProfile);
-    } else if (cfg.showPlayerProfile !== false && cfg.profilePreview) {
-        renderPlayerProfile(cfg.profilePreview);
     }
 })();

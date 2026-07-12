@@ -64,15 +64,5 @@ window.LOADING_CONFIG = {
     // Bot-Token sicher NUR in der server.cfg setzen – siehe server/convars.example.cfg
     //   set loadingscreen:discord_bot_token "..."   (set, nicht setr!)
     //   set loadingscreen:use_lanyard true
-    showPlayerProfile: true,
-
-    // Nur für Browser-Vorschau – FiveM ersetzt das per playerProfile Event.
-    profilePreview: {
-        displayName: 'EGGSY',
-        name: 'EGGSY',
-        discordUsername: 'eggsydev',
-        discordStatus: 'online',
-        statusLabel: 'Online',
-        avatar: 'https://cdn.discordapp.com/avatars/162969778699501569/a_5a915f09f9a2bdf1c05e65d75ffd7101.gif?size=128'
-    }
+    showPlayerProfile: true
 };
