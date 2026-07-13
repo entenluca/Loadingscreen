@@ -524,7 +524,7 @@ body {
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: var(--wappen-gold);
+    background: var(--white);
     opacity: 0.35;
     animation: dot-bounce 1.2s ease-in-out infinite;
 }
