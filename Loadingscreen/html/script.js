@@ -20,7 +20,6 @@
     const mediaIcon = byId('mediaIcon');
     const mediaText = byId('mediaText');
     const progressFill = byId('progressFill');
-    const progressPercent = byId('progressPercent');
     const loadingStatus = byId('loadingStatus');
     const progressTrack = document.querySelector('.progress-track');
     const playerProfile = byId('playerProfile');
@@ -390,7 +389,6 @@
         state.progress = safePercent;
 
         if (progressFill) progressFill.style.width = `${safePercent}%`;
-        if (progressPercent) progressPercent.textContent = `${safePercent}%`;
         if (loadingStatus) loadingStatus.textContent = resolveLoadingStatus(safePercent);
         if (progressTrack) progressTrack.setAttribute('aria-valuenow', String(safePercent));
     }

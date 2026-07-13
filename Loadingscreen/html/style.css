@@ -12,8 +12,9 @@
     --wappen-brown: #8b5e3c;
     --wappen-red: #c42828;
 
-    --blue-soft: rgba(138, 158, 181, 0.28);
-    --green-soft: rgba(127, 154, 114, 0.26);
+    --blue-soft: rgba(138, 158, 181, 0.32);
+    --blue-deep: rgba(106, 132, 158, 0.22);
+    --green-soft: rgba(127, 154, 114, 0.14);
     --gold-soft: rgba(240, 200, 48, 0.22);
     --gold-glow: rgba(240, 200, 48, 0.48);
 
@@ -95,7 +96,7 @@ body {
 .shade {
     z-index: 1;
     background:
-        linear-gradient(135deg, rgba(138, 158, 181, 0.24) 0%, rgba(0, 0, 0, 0.5) 38%, rgba(127, 154, 114, 0.2) 100%),
+        linear-gradient(135deg, rgba(138, 158, 181, 0.28) 0%, rgba(0, 0, 0, 0.5) 42%, rgba(127, 154, 114, 0.08) 100%),
         linear-gradient(115deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.38) 42%, rgba(0, 0, 0, 0.18) 100%),
         linear-gradient(180deg, rgba(0, 0, 0, 0.42) 0%, rgba(0, 0, 0, 0.04) 45%, rgba(0, 0, 0, 0.72) 100%);
 }
@@ -146,7 +147,7 @@ body {
     height: 360px;
     bottom: 8%;
     right: 6%;
-    background: var(--green-soft);
+    background: var(--blue-deep);
     animation-delay: -4s;
 }
 
@@ -181,7 +182,7 @@ body {
     position: absolute;
     inset: -1px;
     border-radius: calc(var(--radius-lg) + 1px);
-    background: linear-gradient(135deg, rgba(138, 158, 181, 0.32), transparent 48%, rgba(127, 154, 114, 0.24));
+    background: linear-gradient(135deg, rgba(138, 158, 181, 0.34), transparent 55%, rgba(127, 154, 114, 0.1));
     opacity: 0.6;
     pointer-events: none;
 }
@@ -392,8 +393,8 @@ body {
 .title-yellow {
     margin-top: 6px;
     font-size: clamp(48px, 5.2vw, 96px);
-    /* Schild-Diagonale: Blaugrau (oben rechts) -> Moosgruen (unten links) */
-    background: linear-gradient(135deg, var(--wappen-blue) 0%, var(--wappen-green) 100%);
+    /* Blau dominiert, Gruen nur als dezenter Wappen-Akzent am Ende */
+    background: linear-gradient(135deg, var(--wappen-blue) 0%, var(--wappen-blue) 72%, var(--wappen-green) 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -434,7 +435,7 @@ body {
     position: absolute;
     inset: -1px;
     border-radius: calc(var(--radius-lg) + 1px);
-    background: linear-gradient(135deg, rgba(138, 158, 181, 0.28), transparent 45%, rgba(127, 154, 114, 0.2));
+    background: linear-gradient(135deg, rgba(138, 158, 181, 0.3), transparent 50%, rgba(127, 154, 114, 0.08));
     opacity: 0.55;
     pointer-events: none;
 }
@@ -497,8 +498,6 @@ body {
 .loader-meta {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 16px;
 }
 
 .loader-status {
@@ -538,15 +537,6 @@ body {
     40%           { opacity: 1; transform: translateY(-3px); }
 }
 
-.progress-percent {
-    font-size: 13px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.08em;
-    color: var(--wappen-silver);
-    text-shadow: 0 0 14px rgba(138, 158, 181, 0.45);
-}
-
 .progress-track {
     position: relative;
     height: 4px;
@@ -561,8 +551,8 @@ body {
     height: 100%;
     width: 0%;
     border-radius: inherit;
-    background: linear-gradient(135deg, var(--wappen-blue), var(--wappen-green));
-    box-shadow: 0 0 16px rgba(127, 154, 114, 0.35);
+    background: linear-gradient(90deg, var(--wappen-blue) 0%, #6d8ea8 78%, var(--wappen-green) 100%);
+    box-shadow: 0 0 16px rgba(138, 158, 181, 0.4);
     transition: width 0.4s var(--ease-out);
 }
 
@@ -615,8 +605,8 @@ body {
 }
 
 .media-toggle[data-mode="images"] {
-    border-color: rgba(127, 154, 114, 0.42);
-    background: var(--green-soft);
+    border-color: rgba(138, 158, 181, 0.38);
+    background: var(--blue-deep);
 }
 
 .media-icon {
@@ -625,12 +615,12 @@ body {
     justify-content: center;
     width: 22px;
     height: 22px;
-    color: var(--wappen-green);
+    color: var(--wappen-blue);
     line-height: 1;
 }
 
 .media-toggle[data-mode="images"] .media-icon {
-    color: var(--wappen-blue);
+    color: var(--wappen-silver);
 }
 
 /* ── Sound-Toggle ────────────────────────────────────────── */
