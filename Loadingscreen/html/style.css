@@ -1,28 +1,27 @@
 :root {
-    /* Minden-Wappen (Blau / Gruen / Silber / Gold / Rot) */
-    --wappen-blue: #6d8fad;
-    --wappen-green: #6d916e;
-    --wappen-silver: #c4c8cd;
-    --wappen-gold: #d4b84a;
-    --wappen-brown: #7a5535;
+    /*
+     * Minden-Wappen – Farbzuordnung:
+     * Blaugrau + Moosgruen = Schildfelder (Hauptfarben)
+     * Gold = NUR Radnabe + Haken am Rad (kleine Akzente)
+     * Silber = Schildrand | Braun = Rad/Stab | Rot = Kreuz
+     */
+    --wappen-blue: #8a9eb5;
+    --wappen-green: #7f9a72;
+    --wappen-gold: #f0c830;
+    --wappen-silver: #c0c4c8;
+    --wappen-brown: #8b5e3c;
     --wappen-red: #c42828;
 
-    --accent: var(--wappen-gold);
-    --accent-soft: rgba(212, 184, 74, 0.24);
-    --accent-glow: rgba(212, 184, 74, 0.52);
-    --blue-soft: rgba(109, 143, 173, 0.28);
-    --green-soft: rgba(109, 145, 110, 0.26);
-
-    /* Kompatibilitaet (bestehende Klassen) */
-    --yellow: var(--wappen-gold);
-    --yellow-soft: var(--accent-soft);
-    --yellow-glow: var(--accent-glow);
+    --blue-soft: rgba(138, 158, 181, 0.28);
+    --green-soft: rgba(127, 154, 114, 0.26);
+    --gold-soft: rgba(240, 200, 48, 0.22);
+    --gold-glow: rgba(240, 200, 48, 0.48);
 
     --white: #ffffff;
-    --muted: rgba(196, 200, 205, 0.72);
+    --muted: rgba(192, 196, 200, 0.72);
     --glass: rgba(14, 18, 22, 0.58);
-    --glass-border: rgba(196, 200, 205, 0.16);
-    --glass-highlight: rgba(196, 200, 205, 0.08);
+    --glass-border: rgba(192, 196, 200, 0.18);
+    --glass-highlight: rgba(192, 196, 200, 0.08);
     --shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
     --radius-lg: 18px;
     --radius-md: 12px;
@@ -96,7 +95,7 @@ body {
 .shade {
     z-index: 1;
     background:
-        linear-gradient(135deg, rgba(109, 143, 173, 0.22) 0%, rgba(0, 0, 0, 0.5) 38%, rgba(109, 145, 110, 0.18) 100%),
+        linear-gradient(135deg, rgba(138, 158, 181, 0.24) 0%, rgba(0, 0, 0, 0.5) 38%, rgba(127, 154, 114, 0.2) 100%),
         linear-gradient(115deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.38) 42%, rgba(0, 0, 0, 0.18) 100%),
         linear-gradient(180deg, rgba(0, 0, 0, 0.42) 0%, rgba(0, 0, 0, 0.04) 45%, rgba(0, 0, 0, 0.72) 100%);
 }
@@ -182,7 +181,7 @@ body {
     position: absolute;
     inset: -1px;
     border-radius: calc(var(--radius-lg) + 1px);
-    background: linear-gradient(135deg, rgba(109, 143, 173, 0.32), transparent 48%, rgba(109, 145, 110, 0.22));
+    background: linear-gradient(135deg, rgba(138, 158, 181, 0.32), transparent 48%, rgba(127, 154, 114, 0.24));
     opacity: 0.6;
     pointer-events: none;
 }
@@ -230,7 +229,7 @@ body {
     justify-content: center;
     font-size: 20px;
     font-weight: 800;
-    color: var(--wappen-gold);
+    color: var(--wappen-blue);
     pointer-events: none;
     user-select: none;
 }
@@ -317,7 +316,7 @@ body {
 .player-status-label.is-dnd { color: #f04747; }
 .player-status-label.is-offline,
 .player-status-label.is-loading { color: #9aa3af; }
-.player-status-label.is-connecting { color: var(--wappen-gold); }
+.player-status-label.is-connecting { color: var(--wappen-blue); }
 
 .anim {
     opacity: 0;
@@ -362,7 +361,7 @@ body {
     height: 7px;
     border-radius: 50%;
     background: var(--wappen-gold);
-    box-shadow: 0 0 12px var(--accent-glow);
+    box-shadow: 0 0 12px var(--gold-glow);
     animation: pulse 2.4s ease-in-out infinite;
 }
 
@@ -393,13 +392,14 @@ body {
 .title-yellow {
     margin-top: 6px;
     font-size: clamp(48px, 5.2vw, 96px);
-    background: linear-gradient(135deg, var(--wappen-blue) 0%, var(--wappen-green) 55%, var(--wappen-gold) 100%);
+    /* Schild-Diagonale: Blaugrau (oben rechts) -> Moosgruen (unten links) */
+    background: linear-gradient(135deg, var(--wappen-blue) 0%, var(--wappen-green) 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: shimmer-text 4s linear infinite;
-    filter: drop-shadow(0 4px 24px rgba(109, 143, 173, 0.35));
+    filter: drop-shadow(0 4px 24px rgba(138, 158, 181, 0.4));
 }
 
 @keyframes shimmer-text {
@@ -434,7 +434,7 @@ body {
     position: absolute;
     inset: -1px;
     border-radius: calc(var(--radius-lg) + 1px);
-    background: linear-gradient(135deg, rgba(109, 143, 173, 0.28), transparent 45%, rgba(109, 145, 110, 0.18));
+    background: linear-gradient(135deg, rgba(138, 158, 181, 0.28), transparent 45%, rgba(127, 154, 114, 0.2));
     opacity: 0.55;
     pointer-events: none;
 }
@@ -455,7 +455,7 @@ body {
     align-items: center;
     gap: 12px;
     margin-bottom: 10px;
-    color: var(--wappen-gold);
+    color: var(--wappen-blue);
     font-size: 15px;
     font-weight: 700;
     letter-spacing: 0.02em;
@@ -543,8 +543,8 @@ body {
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.08em;
-    color: var(--wappen-gold);
-    text-shadow: 0 0 18px var(--accent-glow);
+    color: var(--wappen-silver);
+    text-shadow: 0 0 14px rgba(138, 158, 181, 0.45);
 }
 
 .progress-track {
@@ -561,15 +561,16 @@ body {
     height: 100%;
     width: 0%;
     border-radius: inherit;
-    background: linear-gradient(90deg, rgba(109, 143, 173, 0.85), var(--wappen-green) 55%, var(--wappen-gold));
-    box-shadow: 0 0 20px var(--accent-glow);
+    background: linear-gradient(135deg, var(--wappen-blue), var(--wappen-green));
+    box-shadow: 0 0 16px rgba(127, 154, 114, 0.35);
     transition: width 0.4s var(--ease-out);
 }
 
 .progress-shimmer {
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%);
+    /* Gold nur als Rad-Haken-Glanz auf der Leiste */
+    background: linear-gradient(90deg, transparent 0%, var(--gold-soft) 42%, rgba(240, 200, 48, 0.55) 50%, var(--gold-soft) 58%, transparent 100%);
     transform: translateX(-100%);
     animation: bar-shimmer 2.2s ease-in-out infinite;
 }
@@ -605,7 +606,7 @@ body {
 }
 
 .media-toggle:hover {
-    border-color: rgba(109, 143, 173, 0.45);
+    border-color: rgba(138, 158, 181, 0.45);
     background: var(--blue-soft);
 }
 
@@ -614,7 +615,7 @@ body {
 }
 
 .media-toggle[data-mode="images"] {
-    border-color: rgba(109, 145, 110, 0.42);
+    border-color: rgba(127, 154, 114, 0.42);
     background: var(--green-soft);
 }
 
@@ -624,8 +625,12 @@ body {
     justify-content: center;
     width: 22px;
     height: 22px;
-    color: var(--wappen-gold);
+    color: var(--wappen-green);
     line-height: 1;
+}
+
+.media-toggle[data-mode="images"] .media-icon {
+    color: var(--wappen-blue);
 }
 
 /* ── Sound-Toggle ────────────────────────────────────────── */
@@ -661,7 +666,7 @@ body {
     justify-content: center;
     width: 22px;
     height: 22px;
-    color: var(--wappen-gold);
+    color: var(--wappen-blue);
     line-height: 1;
 }
 
@@ -671,7 +676,7 @@ body {
 
 .sound-toggle b {
     font-weight: 700;
-    color: var(--wappen-gold);
+    color: var(--wappen-silver);
 }
 
 .sound-toggle[data-muted="true"] b {
