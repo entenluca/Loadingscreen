@@ -361,8 +361,8 @@ body {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: var(--wappen-gold);
-    box-shadow: 0 0 12px var(--gold-glow);
+    background: var(--wappen-green);
+    box-shadow: 0 0 12px rgba(127, 154, 114, 0.55);
     animation: pulse 2.4s ease-in-out infinite;
 }
 
